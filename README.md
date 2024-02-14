@@ -14,8 +14,8 @@ for _ in range(25):
 I recommend using [conda](https://docs.anaconda.com/anaconda/install/) for setup:
 
 ```
-conda create -n roboverse python=3.6
-source activate roboverse
+conda create -n roboverse python=3.8
+conda activate roboverse
 pip install -r requirements.txt
 ```
 When using this repository with other projects, run `pip install -e .` in the root directory of this repo. 

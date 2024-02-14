@@ -59,7 +59,7 @@ def collect_one_traj(env, policy, num_timesteps, noise,
         action += np.random.normal(scale=noise, size=(env_action_dim,))
         action = np.clip(action, -1 + EPSILON, 1 - EPSILON)
         observation = env.get_observation()
-        next_observation, reward, done, info = env.step(action)
+        next_observation, reward, done, truncated, info = env.step(action)
         add_transition(traj, observation,  action, reward, info, agent_info,
                        done, next_observation, img_dim)
 

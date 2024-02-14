@@ -179,7 +179,7 @@ class Widow250Env(gym.Env, Serializable):
                 scale=self.object_scales[object_name])
             bullet.step_simulation(self.num_sim_steps_reset)
 
-    def reset(self):
+    def reset(self, target=None, seed=None, options=None):
         bullet.reset()
         bullet.setup_headless()
         self._load_meshes()
@@ -189,7 +189,7 @@ class Widow250Env(gym.Env, Serializable):
             self.reset_joint_values)
         self.is_gripper_open = True  # TODO(avi): Clean this up
 
-        return self.get_observation()
+        return self.get_observation(), self.get_info()
 
     def step(self, action):
 
@@ -272,7 +272,8 @@ class Widow250Env(gym.Env, Serializable):
         info = self.get_info()
         reward = self.get_reward(info)
         done = False
-        return self.get_observation(), reward, done, info
+        truncated = False
+        return self.get_observation(), reward, done, truncated, info
 
     def get_observation(self):
         gripper_state = self.get_gripper_state()
@@ -343,7 +344,10 @@ class Widow250Env(gym.Env, Serializable):
             obs_bound = 100
             obs_high = np.ones(robot_state_dim) * obs_bound
             state_space = gym.spaces.Box(-obs_high, obs_high)
-            spaces = {'image': img_space, 'state': state_space}
+            object_position = gym.spaces.Box(-1, 1)
+            object_orientation = gym.spaces.Box(-1, 1)
+            spaces = {'image': img_space, 'state': state_space, 'object_position': object_position,
+                      'object_orientation': object_orientation}
             self.observation_space = gym.spaces.Dict(spaces)
         else:
             raise NotImplementedError
