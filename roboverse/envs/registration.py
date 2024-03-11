@@ -1032,6 +1032,7 @@ ENVIRONMENT_SPECS = (
                    'target_object': 'ball',
                    'load_tray': False,
                    'is_gripper_open': False,
+                   'neutral_gripper_open': False,
                    }
     },
 )

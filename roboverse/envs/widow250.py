@@ -8,13 +8,19 @@ from roboverse.bullet import object_utils
 from .multi_object import MultiObjectEnv
 
 END_EFFECTOR_INDEX = 8
-RESET_JOINT_VALUES = [1.57, -0.6, -0.6, 0, -1.57, 0., 0., 0.036, -0.036]
-RESET_JOINT_VALUES_GRIPPER_CLOSED = [1.57, -0.6, -0.6, 0, -1.57, 0., 0., 0.015, -0.015]
+# 1: Base rotation
+# 2: Shoulder
+# 3: Elbow
+# 4: Wrist 1
+# 5: Wrist 2
+# 6: Gripper 1
+# 7: Gripper 2
+RESET_JOINT_VALUES                = [1.57, -0.6, 1.0, 0, -1.57, -1.57, 0., 0.036, -0.036]
+RESET_JOINT_VALUES_GRIPPER_CLOSED = [1.57, -0.6, 1.0, 0, -1.57, -1.57, 0., 0.015, -0.015]
 RESET_JOINT_INDICES = [0, 1, 2, 3, 4, 5, 7, 10, 11]
 GUESS = 3.14  # TODO(avi) This is a guess, need to verify what joint this is
-JOINT_LIMIT_LOWER = [-3.14, -1.88, -1.60, -3.14, -2.14, -3.14, -GUESS, 0.015,
-                     -0.037]
-JOINT_LIMIT_UPPER = [3.14, 1.99, 2.14, 3.14, 1.74, 3.14, GUESS, 0.037, -0.015]
+JOINT_LIMIT_LOWER = [-3.14, -1.88, -1.60, -3.14, -2.14, -3.14, -GUESS, 0.015, -0.037]
+JOINT_LIMIT_UPPER = [3.14,   1.99,  2.14,  3.14,  1.74,  3.14,  GUESS, 0.037, -0.015]
 JOINT_RANGE = []
 for upper, lower in zip(JOINT_LIMIT_LOWER, JOINT_LIMIT_UPPER):
     JOINT_RANGE.append(upper - lower)
