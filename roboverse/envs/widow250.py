@@ -68,6 +68,7 @@ class Widow250Env(gym.Env, Serializable):
 
                  gui=False,
                  in_vr_replay=False,
+                 is_gripper_open=True,
                  ):
 
         self.control_mode = control_mode
@@ -148,7 +149,8 @@ class Widow250Env(gym.Env, Serializable):
         self._set_action_space()
         self._set_observation_space()
 
-        self.is_gripper_open = True  # TODO(avi): Clean this up
+        self.default_gripper_state = is_gripper_open
+        self.is_gripper_open = self.default_gripper_state  # TODO(avi): Clean this up
 
         self.reset()
         self.ee_pos_init, self.ee_quat_init = bullet.get_link_state(
@@ -187,7 +189,7 @@ class Widow250Env(gym.Env, Serializable):
             self.robot_id,
             self.reset_joint_indices,
             self.reset_joint_values)
-        self.is_gripper_open = True  # TODO(avi): Clean this up
+        self.is_gripper_open = self.default_gripper_state  # TODO(avi): Clean this up
 
         return self.get_observation(), self.get_info()
 
@@ -344,8 +346,8 @@ class Widow250Env(gym.Env, Serializable):
             obs_bound = 100
             obs_high = np.ones(robot_state_dim) * obs_bound
             state_space = gym.spaces.Box(-obs_high, obs_high)
-            object_position = gym.spaces.Box(-1, 1)
-            object_orientation = gym.spaces.Box(-1, 1)
+            object_position = gym.spaces.Box(np.asarray([-1]), np.asarray([1]))
+            object_orientation = gym.spaces.Box(np.asarray([-1]), np.asarray([1]))
             spaces = {'image': img_space, 'state': state_space, 'object_position': object_position,
                       'object_orientation': object_orientation}
             self.observation_space = gym.spaces.Dict(spaces)

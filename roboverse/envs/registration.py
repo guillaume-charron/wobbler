@@ -1018,6 +1018,22 @@ ENVIRONMENT_SPECS = (
                    'load_tray': False,
                    }
     },
+    {
+        'id': 'Widow250BallBalancing-v0',
+        'entry_point': 'roboverse.envs.widow250_balance:Widow250BalanceEnv',
+        'kwargs': {'reward_type': 'balance',
+                   'control_mode': 'discrete_gripper',
+
+                   'object_names': ('ball',),
+                   'object_scales': (0.75,),
+                   'object_orientations': ((1, 1, 1, 1),),
+                   'object_position_high': (0.6, 0.3, -0.1),
+                   'object_position_low': (0.6, 0.3, 0.5),
+                   'target_object': 'ball',
+                   'load_tray': False,
+                   'is_gripper_open': False,
+                   }
+    },
 )
 
 
