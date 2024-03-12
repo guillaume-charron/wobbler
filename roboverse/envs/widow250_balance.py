@@ -40,8 +40,6 @@ class Widow250BalanceEnv(Widow250Env):
         p.changeDynamics(self.ball_id, -1, restitution=0.9, mass=1.0, lateralFriction=0.9, rollingFriction=0.9, spinningFriction=0.9)
         p.changeDynamics(self.table_id, -1, restitution=0.8, lateralFriction=0.9, rollingFriction=0.9, spinningFriction=0.9)
 
-
-
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
         return info

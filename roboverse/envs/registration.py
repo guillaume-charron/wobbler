@@ -1025,7 +1025,7 @@ ENVIRONMENT_SPECS = (
                    'control_mode': 'discrete_gripper',
 
                    'object_names': ('ball',),
-                   'object_scales': (0.75,),
+                   'object_scales': (0.6,),
                    'object_orientations': ((1, 1, 1, 1),),
                    'object_position_high': (0.6, 0.3, -0.1),
                    'object_position_low': (0.6, 0.3, 0.5),

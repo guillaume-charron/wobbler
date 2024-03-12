@@ -66,10 +66,10 @@ class Widow250Env(gym.Env, Serializable):
 
                  ee_pos_high=(0.8, .4, -0.1),
                  ee_pos_low=(.4, -.2, -.34),
-                 camera_target_pos=(0.6, 0.2, -0.28),
+                 camera_target_pos=(0.6, 0.1, -0.28),
                  camera_distance=0.29,
                  camera_roll=0.0,
-                 camera_pitch=-40,
+                 camera_pitch=-90,
                  camera_yaw=180,
 
                  gui=False,
@@ -195,7 +195,7 @@ class Widow250Env(gym.Env, Serializable):
             self.robot_id,
             self.reset_joint_indices,
             self.reset_joint_values)
-        self.is_gripper_open = self.default_gripper_state  # TODO(avi): Clean this up
+        self.is_gripper_open = self.default_gripper_state 
 
         return self.get_observation(), self.get_info()
 
