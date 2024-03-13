@@ -17,6 +17,7 @@ class Widow250BalanceEnv(Widow250Env):
     def _load_meshes(self):
         self.table_id = objects.table()
         self.robot_id = objects.widow250()
+        self.plate_id = objects.plate()
 
         self.objects = {}
         object_positions = object_utils.generate_object_positions(
@@ -51,6 +52,23 @@ class Widow250BalanceEnv(Widow250Env):
             return -1
         else:
             return super(Widow250BalanceEnv, self).get_reward(info)
+        
+    def reset(self, target=None, seed=None, options=None):
+        bullet.reset()
+        bullet.setup_headless()
+        self._load_meshes()
+        bullet.reset_robot(
+            self.robot_id,
+            self.reset_joint_indices,
+            self.reset_joint_values)
+        self.is_gripper_open = self.default_gripper_state 
+        self.ee_pos_init, self.ee_quat_init = bullet.get_link_state(
+            self.robot_id, self.end_effector_index)
+        p.createConstraint(self.end_effector_index, -1, self.plate_id, -1, p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0])
+
+
+        return self.get_observation(), self.get_info()
+
 
 if __name__ == "__main__":
     env = roboverse.make('Widow250BallBalancing-v0',

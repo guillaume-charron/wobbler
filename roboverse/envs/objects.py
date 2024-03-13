@@ -30,7 +30,6 @@ def tray(base_position=(.60, 0.3, -.37), scale=0.5):
                          globalScaling=scale)
     return tray_id
 
-
 def widow250():
     widow250_path = os.path.join(ASSET_PATH,
                                  'interbotix_descriptions/urdf/wx250s.urdf')
@@ -39,3 +38,12 @@ def widow250():
                              baseOrientation=bullet.deg_to_quat([0., 0., 0])
                              )
     return widow250_id
+
+def plate():
+    # test_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[.1,.1,.006])
+    # test_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[.1,.1,.006])
+    # test_body = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=test_collision, baseVisualShapeIndex=test_visual, basePosition = [0.6, 0.125, -0.05])
+    test_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[.1,.006,.1])
+    test_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[.1,.006,.1])
+    test_body = p.createMultiBody(baseMass=0.000000000001, baseCollisionShapeIndex=test_collision, baseVisualShapeIndex=test_visual, basePosition = [1.14, -0.01, 0.00001])
+    return test_body

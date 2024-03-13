@@ -11,9 +11,9 @@ def connect_headless(gui=False):
         p.connect(p.DIRECT)
 
     p.resetDebugVisualizerCamera(cameraDistance=0.8,
-                                 cameraYaw=180,
+                                 cameraYaw=170,
                                  cameraPitch=-40,
-                                 cameraTargetPosition=[0.6, 0, -0.4])
+                                 cameraTargetPosition=[0.6, 0, -0.3])
     p.setRealTimeSimulation(False)
     p.stepSimulation()
 
