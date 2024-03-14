@@ -1,13 +1,10 @@
-from roboverse.envs.widow250 import Widow250Env
+from roboverse.envs.widow250 import END_EFFECTOR_INDEX, Widow250Env
 import roboverse
 from roboverse.bullet import object_utils
 import roboverse.bullet as bullet
 from roboverse.envs import objects
 import numpy as np
-import itertools
-from roboverse.assets.shapenet_object_lists import CONTAINER_CONFIGS
 import pybullet as p
-
 
 class Widow250BalanceEnv(Widow250Env):
     def __init__(self,
@@ -37,9 +34,15 @@ class Widow250BalanceEnv(Widow250Env):
                 self.ball_id = self.objects[object_name]
             bullet.step_simulation(self.num_sim_steps_reset)
         
+        # Attach plate to end effector:
+        const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_FIXED, [0,0,0], [0,-0.13,0], [0,0,0], [0,0,0], [0,0,0])
+        p.changeConstraint(const_id, maxForce=9e20, erp=1e-20)
+
         # Make the ball bounce on the table
-        p.changeDynamics(self.ball_id, -1, restitution=0.9, mass=1.0, lateralFriction=0.9, rollingFriction=0.9, spinningFriction=0.9)
-        p.changeDynamics(self.table_id, -1, restitution=0.8, lateralFriction=0.9, rollingFriction=0.9, spinningFriction=0.9)
+        p.changeDynamics(self.ball_id, -1, restitution=0.9, mass=0.0005, lateralFriction=0.5, rollingFriction=0.5, spinningFriction=0.5)
+        p.changeDynamics(self.table_id, -1, restitution=0.9, lateralFriction=0.1, rollingFriction=0.1, spinningFriction=0.1)
+        p.changeDynamics(self.plate_id, -1, restitution=0.9, lateralFriction=0.1, rollingFriction=0.1, spinningFriction=0.1)
+
 
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
@@ -61,12 +64,7 @@ class Widow250BalanceEnv(Widow250Env):
             self.robot_id,
             self.reset_joint_indices,
             self.reset_joint_values)
-        self.is_gripper_open = self.default_gripper_state 
-        self.ee_pos_init, self.ee_quat_init = bullet.get_link_state(
-            self.robot_id, self.end_effector_index)
-        p.createConstraint(self.end_effector_index, -1, self.plate_id, -1, p.JOINT_FIXED, [0,0,0], [0,0,0], [0,0,0])
-
-
+        self.is_gripper_open = self.default_gripper_state         
         return self.get_observation(), self.get_info()
 
 
