@@ -1027,8 +1027,12 @@ ENVIRONMENT_SPECS = (
                    'object_names': ('ball',),
                    'object_scales': (0.6,),
                    'object_orientations': ((1, 1, 1, 1),),
-                   'object_position_high': (0.6, 0.1, 0.9),
-                   'object_position_low': (0.6, 0.1, 0.6),
+                   # Right (0.5, x, x)
+                   # Left (0.69, x, x)
+                   # Close to gripper (x, 0.05, x)
+                   # Far from gripper (x, 0.22, x)
+                   'object_position_high': (0.69, 0.22, 0.7),
+                   'object_position_low':  (0.5,  0.05, 0.7),
                    'target_object': 'ball',
                    'load_tray': False,
                    'is_gripper_open': False,

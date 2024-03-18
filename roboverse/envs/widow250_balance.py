@@ -39,10 +39,8 @@ class Widow250BalanceEnv(Widow250Env):
         p.changeConstraint(const_id, maxForce=9e20, erp=1e-20)
 
         # Make the ball bounce on the table
-        p.changeDynamics(self.ball_id, -1, restitution=0.9, mass=0.0005, lateralFriction=0.5, rollingFriction=0.5, spinningFriction=0.5)
-        p.changeDynamics(self.table_id, -1, restitution=0.9, lateralFriction=0.1, rollingFriction=0.1, spinningFriction=0.1)
-        p.changeDynamics(self.plate_id, -1, restitution=0.9, lateralFriction=0.1, rollingFriction=0.1, spinningFriction=0.1)
-
+        p.changeDynamics(self.ball_id, -1,   mass=0.00005, linearDamping=0, angularDamping=0, rollingFriction=0.001, spinningFriction=0.001)
+        p.changeDynamics(self.plate_id, -1, rollingFriction=0.1)
 
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
