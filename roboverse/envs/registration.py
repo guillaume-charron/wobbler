@@ -1031,12 +1031,31 @@ ENVIRONMENT_SPECS = (
                    # Left (0.69, x, x)
                    # Close to gripper (x, 0.05, x)
                    # Far from gripper (x, 0.22, x)
-                   'object_position_high': (0.69, 0.22, 0.7),
-                   'object_position_low':  (0.5,  0.05, 0.7),
+                   'object_position_high': (0.68, 0.18, 0.15),
+                   'object_position_low':  (0.54,  0.05, 0.15),
                    'target_object': 'ball',
                    'load_tray': False,
-                   'is_gripper_open': False,
-                   'neutral_gripper_open': False,
+                #    'is_gripper_open': False,
+                #    'neutral_gripper_open': False,
+                   }
+    },
+    {
+        'id': 'Widow250BallBalancingKeyboard-v0',
+        'entry_point': 'roboverse.envs.widow250_balance:Widow250BalanceKeyboardEnv',
+        'kwargs': {'reward_type': 'balance',
+                   'control_mode': 'discrete_gripper',
+                    'object_names': ('ball',),
+                   'object_scales': (0.6,),
+                   'object_orientations': ((1, 1, 1, 1),),
+                   # Right (0.5, x, x)
+                   # Left (0.69, x, x)
+                   # Close to gripper (x, 0.05, x)
+                   # Far from gripper (x, 0.22, x)
+                   'object_position_high': (0.69, 2, 0.7),
+                   'object_position_low':  (0.5,  2, 0.7),
+                   'target_object': 'ball',
+
+                   'load_tray': False,
                    }
     },
 )

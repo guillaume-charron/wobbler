@@ -211,7 +211,8 @@ class Widow250Env(gym.Env, Serializable):
         xyz_action = action[:3]  # ee position actions
         abc_action = action[3:6]  # ee orientation actions
         gripper_action = action[6]
-        neutral_action = action[7]
+        #neutral_action = action[7]
+        neutral_action = 0
 
         ee_pos, ee_quat = bullet.get_link_state(
             self.robot_id, self.end_effector_index)

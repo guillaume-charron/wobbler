@@ -4,6 +4,7 @@ import argparse
 
 import roboverse
 import roboverse.bullet as bullet
+import pybullet as p
 
 KEY_TO_ACTION_MAPPING = {
     bullet.p.B3G_LEFT_ARROW: np.array([0.1, 0, 0, 0, 0, 0, 0]),
@@ -12,12 +13,21 @@ KEY_TO_ACTION_MAPPING = {
     bullet.p.B3G_DOWN_ARROW: np.array([0, 0.1, 0, 0, 0, 0, 0]),
     ord('j'): np.array([0, 0, 0.2, 0, 0, 0, 0]),
     ord('k'): np.array([0, 0, -0.2, 0, 0, 0, 0]),
+    ord('1'): np.array([0, 0, 0, 0.2, 0, 0, 0]),
+    ord('2'): np.array([0, 0, 0, -0.2, 0, 0, 0]),
+    ord('3'): np.array([0, 0, 0, 0, 0.2, 0, 0]),
+    ord('4'): np.array([0, 0, 0, 0, -0.2, 0, 0]),
+    ord('5'): np.array([0, 0, 0, 0, 0, 0.2, 0]),
+    ord('6'): np.array([0, 0, 0, 0, 0, -0.2, 0]),
     ord('h'): np.array([0, 0, 0, 0, 0, 0, -0.7]),
     ord('l'): np.array([0, 0, 0, 0, 0, 0, 0.7])
 }
 
 ENV_COMMANDS = {
-    ord('r'): lambda env: env.reset()
+    ord('r'): lambda env: env.reset(),
+    ord('m'): lambda env: p.saveBullet('test.bullet'),
+    ord('p'): lambda env: p.restoreState(fileName='test.bullet'),
+    ord('d'): lambda env: env.delete_box()
 }
 
 
@@ -37,7 +47,7 @@ def keyboard_control(args):
                 take_action = False
 
         if take_action:
-            obs, rew, done, info = env.step(action)
+            obs, rew, done, trun, info = env.step(action)
             print(rew)
         time.sleep(0.1)
 

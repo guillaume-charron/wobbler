@@ -39,8 +39,17 @@ def widow250():
                              )
     return widow250_id
 
-def plate():
-    test_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[.002,.1,.1])
-    test_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[.002,.1,.1])
-    test_body = p.createMultiBody(baseMass=0.001, baseCollisionShapeIndex=test_collision, baseVisualShapeIndex=test_visual)
-    return test_body
+def plate(pos=None):
+    plate_visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[.1,.1,.004])
+    plate_collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[.1,.1,.004])
+    if pos is not None:
+        plate_body = p.createMultiBody(baseMass=0.0001, baseCollisionShapeIndex=plate_collision, baseVisualShapeIndex=plate_visual, basePosition=pos)
+    else:
+        plate_body = p.createMultiBody(baseMass=0.0001, baseCollisionShapeIndex=plate_collision, baseVisualShapeIndex=plate_visual)
+    return plate_body
+
+def box():
+    visual = p.createVisualShape(p.GEOM_BOX, halfExtents=[.1,.1,.1])
+    collision = p.createCollisionShape(p.GEOM_BOX, halfExtents=[.1,.1,.1])
+    body = p.createMultiBody(baseMass=0.1, baseCollisionShapeIndex=collision, baseVisualShapeIndex=visual, basePosition=[0.6, 0.3, -0.4])
+    return body
