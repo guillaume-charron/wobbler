@@ -6,6 +6,7 @@ import numpy as np
 from .control import get_object_position, get_link_state
 from roboverse.bullet.drawer_utils import *
 from roboverse.bullet.button_utils import *
+from roboverse.bullet.balance_utils import *
 
 CUR_PATH = os.path.dirname(os.path.realpath(__file__))
 ASSET_PATH = os.path.join(CUR_PATH, '../assets')

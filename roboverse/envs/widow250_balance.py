@@ -44,13 +44,24 @@ class Widow250BalanceEnv(Widow250Env):
 
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
+        info['ball_pos'] = self.get_ball_pos()
+        info['plate_pos'] = self.get_plate_pos()
+        info['distance_from_center'] = object_utils.get_distance_from_center(
+            info['ball_pos'], info['plate_pos'])
+        print(info)
         return info
+    
+    def get_ball_pos(self):
+        return object_utils.get_ball_pos(self.ball_id)
+    
+    def get_plate_pos(self):
+        return object_utils.get_plate_pos(self.plate_id)
 
     def get_reward(self, info):
         if not info:
             info = self.get_info()
         if self.reward_type == "balance":
-            return -1
+            return -info['distance_from_center']
         else:
             return super(Widow250BalanceEnv, self).get_reward(info)
         
