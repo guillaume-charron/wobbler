@@ -71,7 +71,6 @@ class Widow250BalanceEnv(Widow250Env):
         info['plate_pos'] = self.get_plate_pos()
         info['distance_from_center'] = object_utils.get_distance_from_center(
             info['ball_pos'], info['plate_pos'])
-        # print(info)
         return info
     
     def get_ball_pos(self):
@@ -98,6 +97,16 @@ class Widow250BalanceEnv(Widow250Env):
         self.generate_dynamics()
 
         return self.get_observation()
+
+    def step(self, action):
+        obs, reward, done, truncated, info = super().step(action)
+
+        if self.reward_type == "balance":
+            reward = self.get_reward(info)
+            if info['ball_pos'][2] < -0.35: # TODO put this in config or something
+                done = True
+        return obs, reward, done, truncated, info   
+
 
 
 class Widow250BalanceKeyboardEnv(Widow250Env):
