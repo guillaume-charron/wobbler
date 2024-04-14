@@ -41,7 +41,6 @@ class Widow250BalanceEnv(Widow250Env):
         
     def drop_ball(self):
         if self.ball_id is not None:
-            p.removeConstraint(self.ball_id)
             p.removeBody(self.ball_id)
             self.ball_id = None
         self.objects = {}
