@@ -64,6 +64,10 @@ class Widow250BalanceEnv(Widow250Env):
     def generate_dynamics(self):
         p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
         p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
+         # Attach plate to end effector:
+        # plate_info = p.getBasePositionAndOrientation(self.plate_id)
+        const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_POINT2POINT, [0,0,0], [0,-0.1,0], [0,0,0], [0,0,0], [0,0,0])
+        p.changeConstraint(const_id, maxForce=1e4, erp=1e-20)
 
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
@@ -92,6 +96,7 @@ class Widow250BalanceEnv(Widow250Env):
         bullet.load_state(osp.join(OBJECT_IN_GRIPPER_PATH,
             'plate_in_gripper_reset.bullet'))
         self.is_gripper_open = False
+        self.duration = 0
 
         self.drop_ball()
         self.generate_dynamics()
@@ -104,7 +109,10 @@ class Widow250BalanceEnv(Widow250Env):
         if self.reward_type == "balance":
             reward = self.get_reward(info)
             if info['ball_pos'][2] < -0.35: # TODO put this in config or something
-                done = True
+                truncated = True
+            else:
+                self.duration += 1
+                reward += self.duration * 0.1
         return obs, reward, done, truncated, info   
 
 
