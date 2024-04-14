@@ -52,9 +52,9 @@ def my_main(args: DictConfig):
         [/DEFAULT]
         """
         experiment = comet_ml.Experiment(
-        api_key="KRDlc4BtykL4EP9xpHBgU7s3z",
-        project_name="ift6163-robotics",
-        workspace="guillaumecharon"
+        api_key=args.local.comet_api_key,
+        project_name="ballbalancingrobot",
+        workspace="ift6163-project"
         )
         # [/TODO]
         experiment.add_tag("project")

@@ -4,7 +4,7 @@ meta:
   seed: 1   # seed of the experiment 
   torch_deterministic: True   # if toggled, `torch.backends.cudnn.deterministic=False` 
   cuda: False   # if toggled, cuda will be enabled by default 
-  track: False   # if toggled, this experiment will be tracked with Weights and Biases
+  track: True   # if toggled, this experiment will be tracked with Weights and Biases
   # capture_video: False   # whether to capture videos of the agent performances (check out `videos` folder)
   save_model: True   # whether to save model into the `runs/{run_name}` folder
   env_id: "Widow250BallBalancing-v0"   # the id of the environment
@@ -61,3 +61,6 @@ sim2real:
   gaussian_act_scale: 0.01
   action_repeat_max: 2
   max_action_repeat_on_reset: 0
+
+defaults:
+  - /local: env
