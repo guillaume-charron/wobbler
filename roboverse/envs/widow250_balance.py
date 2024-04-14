@@ -91,7 +91,7 @@ class Widow250BalanceEnv(Widow250Env):
         if self.reward_type == "balance":
             distance_center_reward = -info['distance_from_center']
             duration_reward = self.duration * 0.1 # TODO put this in config or something
-            height_distance_reward = -info['height_distance'] * 10
+            height_distance_reward = -info['height_distance'] * 0.1 # TODO put this in config or something
             return distance_center_reward + duration_reward + height_distance_reward
         else:
             return super(Widow250BalanceEnv, self).get_reward(info)
