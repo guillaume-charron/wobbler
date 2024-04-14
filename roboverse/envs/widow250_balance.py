@@ -72,7 +72,7 @@ class Widow250BalanceEnv(Widow250Env):
         info['plate_pos'] = self.get_plate_pos()
         info['distance_from_center'] = object_utils.get_distance_from_center(
             info['ball_pos'], info['plate_pos'])
-        print(info)
+        # print(info)
         return info
     
     def get_ball_pos(self):
