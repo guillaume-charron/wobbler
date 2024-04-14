@@ -1,3 +1,4 @@
+import gymnasium
 import numpy as np
 from gym import Wrapper
 from gym.wrappers import FilterObservation, FlattenObservation
@@ -27,8 +28,13 @@ class RoboverseWrapper(Wrapper):
     def __init__(self, env):
         super().__init__(env)
         self.render_mode = 'rgb_array'
+        self.action_space = gymnasium.spaces.Box(
+            low=env.action_space.low[:-2], high=env.action_space.high[:-2]
+        )
 
     def step(self, action):
+        # Append default gripper values:
+        action = np.append(action, [0.015, -0.015])
         obs, reward, terminated, truncated, info = super().step(action)
         return obs, reward, terminated or truncated, info
 
