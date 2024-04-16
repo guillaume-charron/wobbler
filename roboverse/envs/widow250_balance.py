@@ -1,3 +1,4 @@
+import gym
 from roboverse.envs.widow250 import END_EFFECTOR_INDEX, Widow250Env
 import roboverse
 from roboverse.bullet import object_utils
@@ -41,7 +42,6 @@ class Widow250BalanceEnv(Widow250Env):
         
     def drop_ball(self):
         if self.ball_id is not None:
-            p.removeConstraint(self.ball_id)
             p.removeBody(self.ball_id)
             self.ball_id = None
         self.objects = {}
@@ -65,6 +65,10 @@ class Widow250BalanceEnv(Widow250Env):
     def generate_dynamics(self):
         p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
         p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
+         # Attach plate to end effector:
+        # plate_info = p.getBasePositionAndOrientation(self.plate_id)
+        const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_POINT2POINT, [0,0,0], [0,-0.1,0], [0,0,0], [0,0,0], [0,0,0])
+        p.changeConstraint(const_id, maxForce=1e4, erp=1e-20)
 
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
@@ -72,7 +76,7 @@ class Widow250BalanceEnv(Widow250Env):
         info['plate_pos'] = self.get_plate_pos()
         info['distance_from_center'] = object_utils.get_distance_from_center(
             info['ball_pos'], info['plate_pos'])
-        print(info)
+        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
         return info
     
     def get_ball_pos(self):
@@ -85,7 +89,10 @@ class Widow250BalanceEnv(Widow250Env):
         if not info:
             info = self.get_info()
         if self.reward_type == "balance":
-            return -info['distance_from_center']
+            distance_center_reward = -info['distance_from_center']
+            duration_reward = self.duration * 0.1 # TODO put this in config or something
+            height_distance_reward = -info['height_distance'] * 0.1 # TODO put this in config or something
+            return distance_center_reward + duration_reward + height_distance_reward
         else:
             return super(Widow250BalanceEnv, self).get_reward(info)
         
@@ -94,12 +101,51 @@ class Widow250BalanceEnv(Widow250Env):
         bullet.load_state(osp.join(OBJECT_IN_GRIPPER_PATH,
             'plate_in_gripper_reset.bullet'))
         self.is_gripper_open = False
+        self.duration = 0
 
         self.drop_ball()
         self.generate_dynamics()
 
         return self.get_observation()
 
+    def step(self, action):
+        obs, reward, done, truncated, info = super().step(action)
+
+        if self.reward_type == "balance":
+            reward = self.get_reward(info)
+            if info['ball_pos'][2] < -0.35: # TODO put this in config or something
+                truncated = True
+            else:
+                self.duration += 1
+        return obs, reward, done, truncated, info   
+
+    def _set_observation_space(self):
+        robot_state_dim = 9  # XYZ + QUAT + XY_BALL
+        obs_bound = 100
+        obs_high = np.ones(robot_state_dim) * obs_bound
+        state_space = gym.spaces.Box(-obs_high, obs_high)
+        object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
+        object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
+        spaces = {'state': state_space, 'object_position': object_position,
+                    'object_orientation': object_orientation}
+        self.observation_space = gym.spaces.Dict(spaces)
+
+    def get_observation(self):
+        ee_pos, ee_quat = bullet.get_link_state(
+            self.robot_id, self.end_effector_index)
+        object_position, object_orientation = bullet.get_object_position(
+            self.objects[self.target_object])
+        ball_pos = self.get_ball_pos()
+        plate_pos = self.get_plate_pos()
+        ball_relative_pos = np.array(plate_pos)[:2] - np.array(ball_pos)[:2]
+        observation = {
+            'object_position': object_position,
+            'object_orientation': object_orientation,
+            'state': np.concatenate(
+                (ee_pos, ee_quat, ball_relative_pos)),
+        }
+
+        return observation
 
 class Widow250BalanceKeyboardEnv(Widow250Env):
     def __init__(self,

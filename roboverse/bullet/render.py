@@ -1,21 +1,23 @@
 import pybullet as p
-
+import numpy as np
 
 def render(height, width, view_matrix, projection_matrix,
            shadow=1, light_direction=[1, 1, 1],
            renderer=p.ER_BULLET_HARDWARE_OPENGL):
     #  ER_BULLET_HARDWARE_OPENGL
-    img_tuple = p.getCameraImage(width,
-                                 height,
-                                 view_matrix,
-                                 projection_matrix,
-                                 shadow=shadow,
-                                 lightDirection=light_direction,
-                                 renderer=renderer)
+    # img_tuple = p.getCameraImage(width,
+    #                              height,
+    #                              view_matrix,
+    #                              projection_matrix,
+    #                              shadow=shadow,
+    #                              lightDirection=light_direction,
+    #                              renderer=renderer)
+    view_matrix = get_view_matrix([0.6, 0, -0.3], distance=0.8, yaw=170, pitch=-40, roll=0, up_axis_index=2) # TODO - change this
+    projection_matrix = get_projection_matrix(height, width, fov=60, near_plane=0.1, far_plane=2)
+    img_tuple = p.getCameraImage(width, height, view_matrix, projection_matrix, shadow=shadow, lightDirection=light_direction, renderer=renderer)
     _, _, img, depth, segmentation = img_tuple
-    # import ipdb; ipdb.set_trace()
-    # Here, if I do len(img), I get 9216.
-    # img = np.reshape(np.array(img), (48, 48, 4))
+
+    img = np.reshape(np.array(img), (width, height, 4))
 
     img = img[:, :, :-1]
     return img, depth, segmentation
