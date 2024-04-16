@@ -1,14 +1,16 @@
 import os
 import time
-
 import comet_ml
 import hydra
+from dotenv import load_dotenv
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 
 from roble import ppo, sac
 
 PATH = "./runs"
+load_dotenv()
+comet_api_key = os.getenv("COMET_API_KEY")
 
 class Log:
     def __init__(self, cfg, PATH):
@@ -52,7 +54,7 @@ def my_main(args: DictConfig):
         [/DEFAULT]
         """
         experiment = comet_ml.Experiment(
-        api_key=args.local.comet_api_key,
+        api_key=comet_api_key,
         project_name="ballbalancingrobot",
         workspace="ift6163-project"
         )

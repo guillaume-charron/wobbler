@@ -19,7 +19,7 @@ pytest==7.4.3
 pandas==2.0.3
 chardet==5.2.0
 comet_ml
-
+python-dotenv
 gin-config
 setuptools
 wheel
