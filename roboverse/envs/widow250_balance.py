@@ -7,14 +7,16 @@ from roboverse.envs import objects
 import numpy as np
 import pybullet as p
 import os.path as osp
+import time
 
 OBJECT_IN_GRIPPER_PATH = osp.join(osp.dirname(osp.dirname(osp.realpath(__file__))),
                 'assets/bullet-objects/bullet_saved_states/objects_in_gripper/')
 
-
 class Widow250BalanceEnv(Widow250Env):
     def __init__(self,
+                 cfg=None,
                  **kwargs):
+        self.cfg = cfg
         super(Widow250BalanceEnv, self).__init__(**kwargs)
 
     def _load_meshes(self):
@@ -40,11 +42,18 @@ class Widow250BalanceEnv(Widow250Env):
                 self.ball_id = self.objects[object_name]
             bullet.step_simulation(self.num_sim_steps_reset)
         
-    def drop_ball(self):
+    def drop_ball(self, randomize=False):
         if self.ball_id is not None:
             p.removeBody(self.ball_id)
             self.ball_id = None
         self.objects = {}
+
+        if randomize:
+            x_position = np.random.uniform(self.object_position_low[0], self.object_position_high[0])
+            y_position = np.random.uniform(self.object_position_low[1], self.object_position_high[1])
+            z_position = np.random.uniform(self.object_position_low[2], self.object_position_high[2])
+            ball_drop_position = np.array([x_position, y_position, z_position])
+
         object_positions = object_utils.generate_object_positions(
             self.object_position_low, self.object_position_high,
             self.num_objects,
@@ -53,14 +62,19 @@ class Widow250BalanceEnv(Widow250Env):
 
         for object_name, object_position in zip(self.object_names,
                                                 object_positions):
+            if object_name == 'ball' and randomize:
+                object_position = ball_drop_position
+
             self.objects[object_name] = object_utils.load_object(
                 object_name,
                 object_position,
                 object_quat=self.object_orientations[object_name],
                 scale=self.object_scales[object_name])
+
             if object_name == 'ball':
                 self.ball_id = self.objects[object_name]
-            bullet.step_simulation(self.num_sim_steps_reset)
+
+        bullet.step_simulation(self.num_sim_steps_reset)
     
     def generate_dynamics(self):
         p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
@@ -103,7 +117,20 @@ class Widow250BalanceEnv(Widow250Env):
         self.is_gripper_open = False
         self.duration = 0
 
-        self.drop_ball()
+        if self.cfg['randomize']:
+            # Randomize ball size
+            # ball_size = np.random.uniform(self.cfg['ball_size_min'], self.cfg['ball_size_max'])
+            # p.changeVisualShape(self.ball_id, -1, radius=ball_size)
+
+            # Randomize ball weight
+            ball_weight = np.random.uniform(self.cfg['ball_weight_min'], self.cfg['ball_weight_max'])
+            p.changeDynamics(self.ball_id, -1, mass=ball_weight)
+
+            # Randomize friction
+            ball_friction = np.random.uniform(self.cfg['ball_friction_min'], self.cfg['ball_friction_max'])
+            p.changeDynamics(self.ball_id, -1, lateralFriction=ball_friction)
+
+        self.drop_ball(randomize=self.cfg['randomize_ball_drop'])
         self.generate_dynamics()
 
         return self.get_observation()
@@ -199,13 +226,10 @@ class Widow250BalanceKeyboardEnv(Widow250Env):
         self.is_gripper_open = self.default_gripper_state         
         return self.get_observation(), self.get_info()
 
-
 if __name__ == "__main__":
     env = roboverse.make('Widow250BallBalancing-v0',
                          gui=True, transpose_image=False)
-    import time
     env.reset()
-    # import IPython; IPython.embed()
 
     for j in range(5):
         for i in range(20):

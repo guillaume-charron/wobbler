@@ -1,11 +1,9 @@
-import os
-from typing import SupportsFloat
-
-#import gin
 import gymnasium
 import gymnasium as gym
 import numpy as np
 import torch
+import hydra
+from hydra.core.global_hydra import GlobalHydra
 from gymnasium import Wrapper, RewardWrapper
 from gymnasium.utils.step_api_compatibility import convert_to_terminated_truncated_step_api
 from gymnasium.wrappers import TimeLimit
@@ -14,20 +12,17 @@ from tqdm import tqdm
 
 from roble.envs.widowx import create_widow_env
 
-
+def load_config():
+    if not GlobalHydra.instance().is_initialized():
+        hydra.initialize(config_path="config")
+    cfg = hydra.compose(config_name="config")
+    return cfg
 
 def make_balance_task(seed):
-    # CONFIG_DIR = puppersim.getPupperSimPath()
-    # _CONFIG_FILE = os.path.join(CONFIG_DIR, "../puppersim/config", "pupper_pmtg.gin")
-    #  _NUM_STEPS = 10000
-    #  _ENV_RANDOM_SEED = 2
-
-    #import puppersim.data as pd
-    # gin.bind_parameter("scene_base.SceneBase.data_root", pd.getDataPath() + "/")
-    # gin.parse_config_file(_CONFIG_FILE)
-    # env = env_loader.load()
-    #env.seed(seed)
-    env = create_widow_env(observation_mode='state')
+    cfg = load_config()
+    env_config = cfg.environment
+    env = create_widow_env(observation_mode='state', cfg=env_config)
+    env.seed(seed)
 
     class GymnasiumWrapper(Wrapper):
         def __init__(self, env):
@@ -41,7 +36,6 @@ def make_balance_task(seed):
 
         def reset(self, **kwargs):
             env.seed(np.random.randint(0, 20000))   # change seed
-
             return self.env.reset(), {}
 
         def step(self, action):
