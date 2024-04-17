@@ -89,7 +89,7 @@ class Widow250BalanceEnv(Widow250Env):
     
     def generate_dynamics(self):        
         if self.randomize:
-            self.randomize('reset')
+            self.randomize_ball('reset')
         else:
             p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
             p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
@@ -99,7 +99,7 @@ class Widow250BalanceEnv(Widow250Env):
         const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_POINT2POINT, [0,0,0], [0,-0.1,0], [0,0,0], [0,0,0], [0,0,0])
         p.changeConstraint(const_id, maxForce=1e4, erp=1e-20)
 
-    def randomize(self, step_or_reset: str = 'reset' or 'step'):
+    def randomize_ball(self, step_or_reset: str = 'reset' or 'step'):
         
         # TODO Randomize ball size
         # ball_size = np.random.uniform(self.cfg['ball_size_min'], self.cfg['ball_size_max'])
@@ -161,7 +161,8 @@ class Widow250BalanceEnv(Widow250Env):
         return self.get_observation()
 
     def step(self, action):
-        
+        if self.cfg.get("randomize_every_step", False):
+            self.randomize_ball('step')
         
         obs, reward, done, truncated, info = super().step(action)
 
@@ -171,9 +172,6 @@ class Widow250BalanceEnv(Widow250Env):
                 truncated = True
             else:
                 self.duration += 1
-                
-        # if self.cfg["randomize_every_step"]:
-        #     self.randomize('step')
         
         return obs, reward, done, truncated, info   
 
