@@ -63,6 +63,7 @@ sim2real:
   max_action_repeat_on_reset: 0
 
 environment:
+  randomize_every_step: true
   randomize_ball_drop: true
   ball_size: 
     min: 0.4
