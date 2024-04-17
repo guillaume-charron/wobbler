@@ -3,6 +3,8 @@
 .idea/
 data/
 scripts/scratch.py
+.lightning_studio/*
+.vscode/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
