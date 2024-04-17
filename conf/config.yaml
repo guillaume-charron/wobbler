@@ -10,7 +10,7 @@ meta:
   env_id: "Widow250BallBalancing-v0"   # the id of the environment
   timelimit: 200
   sac_instead: False
-  randomize_after_steps: 400_000
+  randomize_after_steps: 6_000_000
   add_to_runname: "wobble"
 
 # Algorithm specific arguments

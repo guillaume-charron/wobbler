@@ -18,7 +18,7 @@ class Widow250BalanceEnv(Widow250Env):
         super().__init__(**kwargs)
         
     def update_randomization(self, should_randomize):
-        self.randomize = should_randomize
+        self.should_randomize = should_randomize
 
     def _load_meshes(self):
         self.table_id = objects.table()

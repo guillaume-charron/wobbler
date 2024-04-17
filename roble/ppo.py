@@ -144,8 +144,9 @@ def train(args, logger, PATH):
             #    LOG_dico["eval_ep_lens"].extend(mean_eval_len)
 
             if not randomization_updated and global_step > args.randomize_after_steps:
-                print("Randomizing dynamics")
-                envs.env_method('update_randomization', True)
+                print("Setting randomization to True in sub-environments")
+                envs.unwrapped.call_async("update_randomization", True)
+                envs.call_wait()
                 randomization_updated = True
 
             # ALGO LOGIC: action logic
