@@ -129,7 +129,7 @@ class Widow250BalanceEnv(Widow250Env):
         info['plate_pos'] = self.get_plate_pos()
         info['distance_from_center'] = object_utils.get_distance_from_center(
             info['ball_pos'], info['plate_pos'])
-        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
+        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2]) # TODO is the ball_pos the center of the ball?
         return info
     
     def get_ball_pos(self):
