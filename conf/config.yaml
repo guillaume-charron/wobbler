@@ -10,8 +10,8 @@ meta:
   env_id: "Widow250BallBalancing-v0"   # the id of the environment
   timelimit: 200
   sac_instead: False
-
-  add_to_runname: Q2.1
+  randomize_after_steps: 350_000
+  add_to_runname: "wobble"
 
 # Algorithm specific arguments
 ppo:
@@ -35,7 +35,7 @@ ppo:
 
 sac:
   num_envs: 8
-  total_timesteps: 1000000 #total timesteps of the experiments
+  total_timesteps: 1_000_000 #total timesteps of the experiments
   buffer_size: 1e6 #the replay memory buffer size
   gamma: 0.99 #the discount factor gamma
   tau: 0.005 #target smoothing coefficient (default: 0.005)
@@ -63,14 +63,29 @@ sim2real:
   max_action_repeat_on_reset: 0
 
 environment:
-  randomize: true
   randomize_ball_drop: true
-  ball_size_min: 0.4
-  ball_size_max: 0.9
-  ball_weight_min: 0.05
-  ball_weight_max: 0.5
-  ball_friction_min: 0.1
-  ball_friction_max: 0.3
+  ball_size: 
+    min: 0.4
+    max: 0.9
+  ball_mass: 
+    reset: [0.00005, 0.1]
+    step: [0.00005, 0.00015]
+  ball_rolling_friction: 
+    reset: [0.1, 1]
+    step: [0.1, 0.2]
+  ball_lateral_friction: 
+    reset: [0.2, 0.8]
+    step: [0.3, 0.5]
+  ball_spinning_friction:
+    reset: [0.01, 0.5]
+    step: [0.005, 0.015]
+  plate_lateral_friction: 
+    reset: [0.1, 0.6]
+    step: [0.15, 0.25]
+  duration_weight: 0.1
+  height_weight: 0.1
+  max_ball_drop_height: 0.15
 
-defaults:
-  - /local: env
+
+# defaults:
+#   - /local: env

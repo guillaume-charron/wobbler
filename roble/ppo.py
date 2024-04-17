@@ -75,32 +75,35 @@ def train(args, logger, PATH):
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-
+    if device.type == "cuda":
+        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        
     # env setup
     sim2real_wrap = make_thunk(args.sim2real)
     make_vector_env = functools.partial(balancegym.make_vector_env, sim2real_wrap=sim2real_wrap,
                                         timelimit=args.timelimit, num_vector=args.num_envs)
-    envs = make_vector_env(args.seed, True, f"{PATH}/{args.run_name}/videos")
+    envs = make_vector_env(args.seed, True, f"{PATH}/videos")
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
-    actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
-    logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    values = torch.zeros((args.num_steps, args.num_envs)).to(device)
+    obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape, device=device)
+    actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape, device=device)
+    logprobs = torch.zeros((args.num_steps, args.num_envs), device=device)
+    rewards = torch.zeros((args.num_steps, args.num_envs), device=device)
+    dones = torch.zeros((args.num_steps, args.num_envs), device=device)
+    values = torch.zeros((args.num_steps, args.num_envs), device=device)
 
     # TRY NOT TO MODIFY: start the game
     SINGLE_global_step = 0
     global_step = 0
+    randomization_updated = False # flag for envs
     start_time = time.time()
     next_obs, _ = envs.reset(seed=args.seed)
-    next_obs = torch.Tensor(next_obs).to(device)
-    next_done = torch.zeros(args.num_envs).to(device)
+    next_obs = torch.Tensor(next_obs, device=device)
+    next_done = torch.zeros(args.num_envs, device=device)
 
     def init_log_dico():
         LOG_dico = {}
@@ -140,6 +143,11 @@ def train(args, logger, PATH):
             #    LOG_dico["eval_returns"].extend(mean_eval_returns)
             #    LOG_dico["eval_ep_lens"].extend(mean_eval_len)
 
+            if not randomization_updated and global_step > args.randomize_after_steps:
+                print("Randomizing dynamics")
+                envs.env_method('update_randomization', True)
+                randomization_updated = True
+
             # ALGO LOGIC: action logic
             with torch.no_grad():
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
@@ -148,10 +156,11 @@ def train(args, logger, PATH):
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, terminations, truncations, infos = envs.step(action.cpu().numpy())
+            action.to(device)
+            next_obs, reward, terminations, truncations, infos = envs.step(action) # used to be action.cpu().numpy()
             next_done = np.logical_or(terminations, truncations)
-            rewards[step] = torch.tensor(reward).to(device).view(-1)
-            next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
+            rewards[step] = torch.tensor(reward, device=device).view(-1)
+            next_obs, next_done = torch.Tensor(next_obs, device=device), torch.Tensor(next_done, device=device)
 
             if "final_info" in infos:
                 for info in infos["final_info"]:
@@ -163,7 +172,7 @@ def train(args, logger, PATH):
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
-            advantages = torch.zeros_like(rewards).to(device)
+            advantages = torch.zeros_like(rewards, device=device)
             lastgaelam = 0
             for t in reversed(range(args.num_steps)):
                 if t == args.num_steps - 1:
@@ -263,7 +272,7 @@ def train(args, logger, PATH):
     envs.close()
 
 
-@hydra.main( config_path="config", config_name="conf")
+@hydra.main(config_path="config", config_name="conf")
 def main(args):
 
     train(args, None)

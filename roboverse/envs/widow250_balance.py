@@ -17,7 +17,11 @@ class Widow250BalanceEnv(Widow250Env):
                  cfg=None,
                  **kwargs):
         self.cfg = cfg
+        self.randomize = False
         super(Widow250BalanceEnv, self).__init__(**kwargs)
+        
+    def update_randomization(self, should_randomize):
+        self.randomize = should_randomize
 
     def _load_meshes(self):
         self.table_id = objects.table()
@@ -42,16 +46,27 @@ class Widow250BalanceEnv(Widow250Env):
                 self.ball_id = self.objects[object_name]
             bullet.step_simulation(self.num_sim_steps_reset)
         
-    def drop_ball(self, randomize=False):
+    def drop_ball(self):
         if self.ball_id is not None:
             p.removeBody(self.ball_id)
             self.ball_id = None
         self.objects = {}
 
-        if randomize:
-            x_position = np.random.uniform(self.object_position_low[0], self.object_position_high[0])
-            y_position = np.random.uniform(self.object_position_low[1], self.object_position_high[1])
-            z_position = np.random.uniform(self.object_position_low[2], self.object_position_high[2])
+        if self.cfg['randomize_ball_drop']:
+            gripper_margin = 0.1  # additional margin from the edge of the plate towards the gripper
+
+            plate_pos = self.get_plate_pos()
+
+            # safe drop zone
+            safe_x_min = plate_pos[0] - gripper_margin
+            safe_x_max = plate_pos[0] + gripper_margin
+            safe_y_min = self.object_position_low[1]
+            safe_y_max = self.object_position_high[1]
+
+            x_position = np.random.uniform(safe_x_min, safe_x_max)
+            y_position = np.random.uniform(safe_y_min, safe_y_max)
+            z_position = np.random.uniform(plate_pos[2], self.cfg['max_ball_drop_height'])
+
             ball_drop_position = np.array([x_position, y_position, z_position])
 
         object_positions = object_utils.generate_object_positions(
@@ -60,25 +75,53 @@ class Widow250BalanceEnv(Widow250Env):
         )
         self.original_object_positions = object_positions
 
-        for object_name, object_position in zip(self.object_names,
-                                                object_positions):
-            if object_name == 'ball' and randomize:
-                object_position = ball_drop_position
-
+        for object_name, object_position in zip(self.object_names, object_positions):
             self.objects[object_name] = object_utils.load_object(
                 object_name,
                 object_position,
                 object_quat=self.object_orientations[object_name],
                 scale=self.object_scales[object_name])
 
-            if object_name == 'ball':
+            # override ball's position if randomized dropping is enabled
+            if object_name == 'ball' and self.cfg['randomize_ball_drop']:
+                self.objects[object_name] = object_utils.load_object(
+                    object_name,
+                    ball_drop_position,
+                    object_quat=self.object_orientations[object_name],
+                    scale=self.object_scales[object_name])
                 self.ball_id = self.objects[object_name]
 
         bullet.step_simulation(self.num_sim_steps_reset)
     
-    def generate_dynamics(self):
-        p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
-        p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
+    def generate_dynamics(self):        
+        if self.randomize:
+            # Randomize ball size
+            # ball_size = np.random.uniform(self.cfg['ball_size_min'], self.cfg['ball_size_max'])
+            # p.changeVisualShape(self.ball_id, -1, radius=ball_size)
+
+            # Randomize ball weight
+            b_min, b_max = self.cfg['ball_mass']['reset']
+            ball_mass = np.random.uniform(b_min, b_max)
+            p.changeDynamics(self.ball_id, -1, mass=ball_mass)
+
+            # Randomize frictions
+            r_min, r_max = self.cfg['ball_rolling_friction']['reset']
+            s_min, s_max = self.cfg['ball_spinning_friction']['reset']
+            l_min, l_max = self.cfg['ball_lateral_friction']['reset']
+            rollingFriction = np.random.uniform(r_min, r_max)
+            spinningFriction = np.random.uniform(s_min, s_max)
+            lateralFriction = np.random.uniform(l_min, l_max)
+            p.changeDynamics(self.ball_id, -1, rollingFriction=rollingFriction, spinningFriction=spinningFriction, lateralFriction=lateralFriction)
+        
+            # Randomize plate friction
+            p_min, p_max = self.cfg['plate_lateral_friction']['reset']
+            lateralFriction = np.random.uniform(p_min, p_max)
+            p.changeDynamics(self.plate_id, -1, lateralFriction=lateralFriction)
+            
+        else:
+            p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
+            p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
+            
          # Attach plate to end effector:
         # plate_info = p.getBasePositionAndOrientation(self.plate_id)
         const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_POINT2POINT, [0,0,0], [0,-0.1,0], [0,0,0], [0,0,0], [0,0,0])
@@ -104,8 +147,8 @@ class Widow250BalanceEnv(Widow250Env):
             info = self.get_info()
         if self.reward_type == "balance":
             distance_center_reward = -info['distance_from_center']
-            duration_reward = self.duration * 0.1 # TODO put this in config or something
-            height_distance_reward = -info['height_distance'] * 0.1 # TODO put this in config or something
+            duration_reward = self.duration * self.cfg['duration_weight']
+            height_distance_reward = -info['height_distance'] * self.cfg['height_weight']
             return distance_center_reward + duration_reward + height_distance_reward
         else:
             return super(Widow250BalanceEnv, self).get_reward(info)
@@ -117,20 +160,7 @@ class Widow250BalanceEnv(Widow250Env):
         self.is_gripper_open = False
         self.duration = 0
 
-        if self.cfg['randomize']:
-            # Randomize ball size
-            # ball_size = np.random.uniform(self.cfg['ball_size_min'], self.cfg['ball_size_max'])
-            # p.changeVisualShape(self.ball_id, -1, radius=ball_size)
-
-            # Randomize ball weight
-            ball_weight = np.random.uniform(self.cfg['ball_weight_min'], self.cfg['ball_weight_max'])
-            p.changeDynamics(self.ball_id, -1, mass=ball_weight)
-
-            # Randomize friction
-            ball_friction = np.random.uniform(self.cfg['ball_friction_min'], self.cfg['ball_friction_max'])
-            p.changeDynamics(self.ball_id, -1, lateralFriction=ball_friction)
-
-        self.drop_ball(randomize=self.cfg['randomize_ball_drop'])
+        self.drop_ball()
         self.generate_dynamics()
 
         return self.get_observation()

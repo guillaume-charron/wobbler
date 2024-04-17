@@ -101,8 +101,8 @@ def evaluate(
         episodic_lengths = []
         while len(episodic_returns) < eval_episodes:
             for timestep in tqdm(range(envs.timelimit + 1)):
-                actions = agent.get_action(torch.Tensor(obs).to(agent.device))
-                next_obs, rewards, terminated, truncated, infos = envs.step(actions.cpu().numpy())
+                actions = agent.get_action(torch.Tensor(obs, device=agent.device))
+                next_obs, rewards, terminated, truncated, infos = envs.step(actions) # was .cpu().numpy()
                 if "final_info" in infos:
                     for info in infos["final_info"]:
                         if info and "episode" in info:
