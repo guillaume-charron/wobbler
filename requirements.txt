@@ -1,7 +1,7 @@
 numpy==1.21.4
 gym==0.17.3
 free-mujoco-py==2.1.6
-pybullet==3.2.0
+pybullet==3.2.6
 tensorboard==2.3.0
 tensorboardX==1.8
 matplotlib
@@ -19,7 +19,7 @@ pytest==7.4.3
 pandas==2.0.3
 chardet==5.2.0
 comet_ml
-
+python-dotenv
 gin-config
 setuptools
 wheel

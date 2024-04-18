@@ -4,14 +4,14 @@ meta:
   seed: 1   # seed of the experiment 
   torch_deterministic: True   # if toggled, `torch.backends.cudnn.deterministic=False` 
   cuda: False   # if toggled, cuda will be enabled by default 
-  track: True   # if toggled, this experiment will be tracked with Weights and Biases
+  track: True   # if toggled, this experiment will be tracked with Comet.ml
   # capture_video: False   # whether to capture videos of the agent performances (check out `videos` folder)
   save_model: True   # whether to save model into the `runs/{run_name}` folder
   env_id: "Widow250BallBalancing-v0"   # the id of the environment
   timelimit: 200
   sac_instead: False
-
-  add_to_runname: Q2.1
+  randomize_after_steps: 6_000_000
+  add_to_runname: "wobble"
 
 # Algorithm specific arguments
 ppo:
@@ -35,7 +35,7 @@ ppo:
 
 sac:
   num_envs: 8
-  total_timesteps: 1000000 #total timesteps of the experiments
+  total_timesteps: 1_000_000 #total timesteps of the experiments
   buffer_size: 1e6 #the replay memory buffer size
   gamma: 0.99 #the discount factor gamma
   tau: 0.005 #target smoothing coefficient (default: 0.005)
@@ -62,5 +62,31 @@ sim2real:
   action_repeat_max: 2
   max_action_repeat_on_reset: 0
 
-defaults:
-  - /local: env
+environment:
+  randomize_every_step: true
+  randomize_ball_drop: true
+  # ball_size: 
+  #   min: 0.4
+  #   max: 0.9
+  ball_mass: 
+    reset: [0.00005, 0.1]
+    step: [0.00003, 0.00007]
+  ball_rolling_friction: 
+    reset: [0.1, 1]
+    step: [0.09, 0.11]
+  ball_lateral_friction: 
+    reset: [0.2, 0.8]
+    step: [0.3, 0.5]
+  ball_spinning_friction:
+    reset: [0.01, 0.5]
+    step: [0.008, 0.012]
+  plate_lateral_friction: 
+    reset: [0.1, 0.6]
+    step: [0.17, 0.22]
+  duration_weight: 0.15
+  height_weight: 0.15
+  max_ball_drop_height: 0.10
+
+
+# defaults:
+#   - /local: env
