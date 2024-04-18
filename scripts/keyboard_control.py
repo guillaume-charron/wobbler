@@ -5,6 +5,9 @@ import argparse
 import roboverse
 import roboverse.bullet as bullet
 import pybullet as p
+import hydra
+from hydra.core.global_hydra import GlobalHydra
+from roble.envs.widowx import create_widow_env
 
 KEY_TO_ACTION_MAPPING = {
     bullet.p.B3G_LEFT_ARROW: np.array([0.1, 0, 0, 0, 0, 0, 0]),
@@ -30,9 +33,16 @@ ENV_COMMANDS = {
     ord('d'): lambda env: env.delete_box()
 }
 
+def load_config():
+    if not GlobalHydra.instance().is_initialized():
+        hydra.initialize(config_path="../conf")
+    cfg = hydra.compose(config_name="config")
+    return cfg
 
 def keyboard_control(args):
-    env = roboverse.make(args.env_name, gui=True)
+    cfg = load_config()
+    env_config = cfg.environment
+    env = create_widow_env(observation_mode='state', cfg=env_config, gui=True)
 
     while True:
         take_action = False
@@ -47,7 +57,7 @@ def keyboard_control(args):
                 take_action = False
 
         if take_action:
-            obs, rew, done, trun, info = env.step(action)
+            obs, rew, done, info = env.step(action)
             print(rew)
         time.sleep(0.1)
 
