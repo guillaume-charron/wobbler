@@ -38,7 +38,7 @@ class Widow250BalanceEnv(Widow250Env):
             self.objects[object_name] = loaded_object
             if object_name == 'ball':
                 self.ball_id = loaded_object
-        bullet.step_simulation(self.num_sim_steps_reset)
+            bullet.step_simulation(self.num_sim_steps_reset)
         
     def drop_ball(self):
         if self.ball_id is not None:
@@ -46,22 +46,22 @@ class Widow250BalanceEnv(Widow250Env):
             self.ball_id = None
         self.objects = {}
 
-        if self.cfg['randomize_ball_drop']:
-            gripper_margin = 0.1  # additional margin from the edge of the plate towards the gripper
+        # if self.cfg['randomize_ball_drop']:
+        #     gripper_margin = 0.1  # additional margin from the edge of the plate towards the gripper
 
-            plate_pos = self.get_plate_pos()
+        #     plate_pos = self.get_plate_pos()
 
-            # safe drop zone
-            safe_x_min = plate_pos[0] - gripper_margin
-            safe_x_max = plate_pos[0] + gripper_margin
-            safe_y_min = self.object_position_low[1]
-            safe_y_max = self.object_position_high[1]
+        #     # safe drop zone
+        #     safe_x_min = plate_pos[0] - gripper_margin
+        #     safe_x_max = plate_pos[0] + gripper_margin
+        #     safe_y_min = self.object_position_low[1]
+        #     safe_y_max = self.object_position_high[1]
 
-            x_position = np.random.uniform(safe_x_min, safe_x_max)
-            y_position = np.random.uniform(safe_y_min, safe_y_max)
-            z_position = np.random.uniform(plate_pos[2], self.cfg['max_ball_drop_height'])
+        #     x_position = np.random.uniform(safe_x_min, safe_x_max)
+        #     y_position = np.random.uniform(safe_y_min, safe_y_max)
+        #     z_position = np.random.uniform(plate_pos[2], self.cfg['max_ball_drop_height'])
 
-            ball_drop_position = np.array([x_position, y_position, z_position])
+        #     ball_drop_position = np.array([x_position, y_position, z_position])
 
         object_positions = object_utils.generate_object_positions(
             self.object_position_low, self.object_position_high,
@@ -69,23 +69,17 @@ class Widow250BalanceEnv(Widow250Env):
         )
         self.original_object_positions = object_positions
 
-        for object_name, object_position in zip(self.object_names, object_positions):
+        for object_name, object_position in zip(self.object_names,
+                                                object_positions):
             self.objects[object_name] = object_utils.load_object(
                 object_name,
                 object_position,
                 object_quat=self.object_orientations[object_name],
                 scale=self.object_scales[object_name])
-
-            # override ball's position if randomized dropping is enabled
-            if object_name == 'ball' and self.cfg['randomize_ball_drop']:
-                self.objects[object_name] = object_utils.load_object(
-                    object_name,
-                    ball_drop_position,
-                    object_quat=self.object_orientations[object_name],
-                    scale=self.object_scales[object_name])
+            if object_name == 'ball':
                 self.ball_id = self.objects[object_name]
+            bullet.step_simulation(self.num_sim_steps_reset)
 
-        bullet.step_simulation(self.num_sim_steps_reset)
     
     def generate_dynamics(self):        
         if self.randomize:
@@ -161,8 +155,6 @@ class Widow250BalanceEnv(Widow250Env):
         return self.get_observation()
 
     def step(self, action):
-        if self.cfg.get("randomize_every_step", False):
-            self.randomize_ball('step')
         
         obs, reward, done, truncated, info = super().step(action)
 
@@ -172,6 +164,9 @@ class Widow250BalanceEnv(Widow250Env):
                 truncated = True
             else:
                 self.duration += 1
+                
+        if self.cfg.get("randomize_every_step", False):
+            self.randomize_ball('step')
         
         return obs, reward, done, truncated, info   
 

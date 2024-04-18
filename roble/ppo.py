@@ -265,7 +265,7 @@ def train(args, logger, PATH):
         print("SPS:", int(global_step / (time.time() - start_time)))
 
     if args.save_model:
-        model_path = f"{PATH}/{args.run_name}/{args.exp_name}.cleanrl_model"
+        model_path = f"{PATH}/{args.exp_name}.cleanrl_model"
         torch.save(agent.state_dict(), model_path)
         print(f"model saved to {model_path}")
 
