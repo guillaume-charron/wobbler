@@ -1031,8 +1031,8 @@ ENVIRONMENT_SPECS = (
                    # Left (0.69, x, x)
                    # Close to gripper (x, 0.05, x)
                    # Far from gripper (x, 0.22, x)
-                   'object_position_high': (0.68, 0.18, 0.15),
-                   'object_position_low':  (0.54,  0.05, 0.15),
+                   'object_position_high': (0.65, 0.16, 0.15),
+                   'object_position_low':  (0.6,  0.08, 0.15),
                    'target_object': 'ball',
                    'load_tray': False,
                 #    'is_gripper_open': False,
@@ -1052,7 +1052,7 @@ ENVIRONMENT_SPECS = (
                    # Close to gripper (x, 0.05, x)
                    # Far from gripper (x, 0.22, x)
                    'object_position_high': (0.69, 2, 0.7),
-                   'object_position_low':  (0.5,  2, 0.7),
+                   'object_position_low':  (0.6,  2, 0.7),
                    'target_object': 'ball',
 
                    'load_tray': False,

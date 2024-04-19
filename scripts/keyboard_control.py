@@ -43,6 +43,8 @@ def keyboard_control(args):
     cfg = load_config()
     env_config = cfg.environment
     env = create_widow_env(observation_mode='state', cfg=env_config, gui=True)
+    env.update_randomization(True)
+    env.reset()
 
     while True:
         take_action = False
