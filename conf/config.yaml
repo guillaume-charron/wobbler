@@ -12,6 +12,7 @@ meta:
   sac_instead: False
   randomize_after_steps: 6_000_000
   add_to_runname: "wobble"
+  from_pretrained: False
 
 # Algorithm specific arguments
 ppo:

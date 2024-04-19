@@ -86,6 +86,14 @@ def train(args, logger, PATH):
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
+
+    # Load pretrained model
+    if args.from_pretrained:
+        try:
+            agent.load_state_dict(torch.load(args.from_pretrained))
+        except:
+            print("Could not load the pretrained agent, continuing with a new agent")
+
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
