@@ -14,7 +14,7 @@ OBJECT_IN_GRIPPER_PATH = osp.join(osp.dirname(osp.dirname(osp.realpath(__file__)
 class Widow250BalanceEnv(Widow250Env):
     def __init__(self, cfg=None, **kwargs):
         self.cfg = cfg
-        self.randomize = False
+        self.should_randomize = False
         super().__init__(**kwargs)
         
     def update_randomization(self, should_randomize):
@@ -46,22 +46,22 @@ class Widow250BalanceEnv(Widow250Env):
             self.ball_id = None
         self.objects = {}
 
-        # if self.cfg['randomize_ball_drop']:
-        #     gripper_margin = 0.1  # additional margin from the edge of the plate towards the gripper
+        if self.cfg['randomize_ball_drop']:
+            gripper_margin = 0.1  # additional margin from the edge of the plate towards the gripper
 
-        #     plate_pos = self.get_plate_pos()
+            plate_pos = self.get_plate_pos()
 
-        #     # safe drop zone
-        #     safe_x_min = plate_pos[0] - gripper_margin
-        #     safe_x_max = plate_pos[0] + gripper_margin
-        #     safe_y_min = self.object_position_low[1]
-        #     safe_y_max = self.object_position_high[1]
+            # safe drop zone
+            safe_x_min = plate_pos[0] - gripper_margin
+            safe_x_max = plate_pos[0] + gripper_margin
+            safe_y_min = self.object_position_low[1]
+            safe_y_max = self.object_position_high[1]
 
-        #     x_position = np.random.uniform(safe_x_min, safe_x_max)
-        #     y_position = np.random.uniform(safe_y_min, safe_y_max)
-        #     z_position = np.random.uniform(plate_pos[2], self.cfg['max_ball_drop_height'])
+            x_position = np.random.uniform(safe_x_min, safe_x_max)
+            y_position = np.random.uniform(safe_y_min, safe_y_max)
+            z_position = plate_pos[2] + self.cfg['ball_drop_height']
 
-        #     ball_drop_position = np.array([x_position, y_position, z_position])
+            ball_drop_position = np.array([x_position, y_position, z_position])
 
         object_positions = object_utils.generate_object_positions(
             self.object_position_low, self.object_position_high,
@@ -71,33 +71,42 @@ class Widow250BalanceEnv(Widow250Env):
 
         for object_name, object_position in zip(self.object_names,
                                                 object_positions):
-            self.objects[object_name] = object_utils.load_object(
-                object_name,
-                object_position,
-                object_quat=self.object_orientations[object_name],
-                scale=self.object_scales[object_name])
-            if object_name == 'ball':
+            if object_name == 'ball' and self.cfg['randomize_ball_drop']:
+                self.objects[object_name] = object_utils.load_object(
+                    object_name,
+                    ball_drop_position,
+                    object_quat=self.object_orientations[object_name],
+                    scale=self.object_scales[object_name])
                 self.ball_id = self.objects[object_name]
+            else:
+                self.objects[object_name] = object_utils.load_object(
+                    object_name,
+                    object_position,
+                    object_quat=self.object_orientations[object_name],
+                    scale=self.object_scales[object_name])
+
             bullet.step_simulation(self.num_sim_steps_reset)
 
     
-    def generate_dynamics(self):        
-        if self.randomize:
+    def generate_dynamics(self):  
+        if self.should_randomize:
             self.randomize_ball('reset')
         else:
             p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
             p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
             
-         # Attach plate to end effector:
-        # plate_info = p.getBasePositionAndOrientation(self.plate_id)
+        # Attach plate to end effector:
         const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_POINT2POINT, [0,0,0], [0,-0.1,0], [0,0,0], [0,0,0], [0,0,0])
         p.changeConstraint(const_id, maxForce=1e4, erp=1e-20)
 
     def randomize_ball(self, step_or_reset: str = 'reset' or 'step'):
         
-        # TODO Randomize ball size
-        # ball_size = np.random.uniform(self.cfg['ball_size_min'], self.cfg['ball_size_max'])
-        # p.changeVisualShape(self.ball_id, -1, radius=ball_size)
+        # Randomize ball size
+        ball_size = np.random.uniform(self.cfg['ball_size']['min'], self.cfg['ball_size']['max'])
+        self.object_scales['ball'] = ball_size
+        
+        if self.cfg['randomize_ball_drop'] and step_or_reset == 'reset':
+            self.drop_ball()
         
         b_min, b_max = self.cfg['ball_mass'][step_or_reset]
         r_min, r_max = self.cfg['ball_rolling_friction'][step_or_reset]
