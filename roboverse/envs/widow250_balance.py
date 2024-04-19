@@ -4,6 +4,7 @@ import pybullet as p
 import os.path as osp
 import time
 from roboverse.envs.widow250 import END_EFFECTOR_INDEX, Widow250Env
+import roboverse
 import roboverse.bullet as bullet
 from roboverse.bullet import object_utils
 from roboverse.envs import objects
