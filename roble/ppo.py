@@ -91,6 +91,7 @@ def train(args, logger, PATH):
     if args.from_pretrained:
         try:
             agent.load_state_dict(torch.load(args.from_pretrained))
+            print("Successfully loaded the pretrained agent from", args.from_pretrained)
         except:
             print("Could not load the pretrained agent, continuing with a new agent")
 
