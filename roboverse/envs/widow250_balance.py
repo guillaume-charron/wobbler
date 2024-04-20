@@ -15,7 +15,7 @@ OBJECT_IN_GRIPPER_PATH = osp.join(osp.dirname(osp.dirname(osp.realpath(__file__)
 class Widow250BalanceEnv(Widow250Env):
     def __init__(self, cfg=None, **kwargs):
         self.cfg = cfg
-        self.randomize = False
+        self.should_randomize = False
         super().__init__(**kwargs)
         
     def update_randomization(self, should_randomize):
@@ -47,23 +47,6 @@ class Widow250BalanceEnv(Widow250Env):
             self.ball_id = None
         self.objects = {}
 
-        # if self.cfg['randomize_ball_drop']:
-        #     gripper_margin = 0.1  # additional margin from the edge of the plate towards the gripper
-
-        #     plate_pos = self.get_plate_pos()
-
-        #     # safe drop zone
-        #     safe_x_min = plate_pos[0] - gripper_margin
-        #     safe_x_max = plate_pos[0] + gripper_margin
-        #     safe_y_min = self.object_position_low[1]
-        #     safe_y_max = self.object_position_high[1]
-
-        #     x_position = np.random.uniform(safe_x_min, safe_x_max)
-        #     y_position = np.random.uniform(safe_y_min, safe_y_max)
-        #     z_position = np.random.uniform(plate_pos[2], self.cfg['max_ball_drop_height'])
-
-        #     ball_drop_position = np.array([x_position, y_position, z_position])
-
         object_positions = object_utils.generate_object_positions(
             self.object_position_low, self.object_position_high,
             self.num_objects,
@@ -79,40 +62,42 @@ class Widow250BalanceEnv(Widow250Env):
                 scale=self.object_scales[object_name])
             if object_name == 'ball':
                 self.ball_id = self.objects[object_name]
+
             bullet.step_simulation(self.num_sim_steps_reset)
 
     
-    def generate_dynamics(self):        
-        if self.randomize:
+    def generate_dynamics(self):  
+        if self.should_randomize:
             self.randomize_ball('reset')
         else:
-            p.changeDynamics(self.ball_id, -1, mass=0.00005, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
+            self.ball_mass = 0.00005
+            p.changeDynamics(self.ball_id, -1, mass=self.ball_mass, rollingFriction=0.01, spinningFriction=0.01, lateralFriction=0.4)
             p.changeDynamics(self.plate_id, -1, lateralFriction=0.2)
             
-         # Attach plate to end effector:
-        # plate_info = p.getBasePositionAndOrientation(self.plate_id)
+        # Attach plate to end effector:
         const_id = p.createConstraint(self.robot_id, END_EFFECTOR_INDEX, self.plate_id, -1, p.JOINT_POINT2POINT, [0,0,0], [0,-0.1,0], [0,0,0], [0,0,0], [0,0,0])
         p.changeConstraint(const_id, maxForce=1e4, erp=1e-20)
 
     def randomize_ball(self, step_or_reset: str = 'reset' or 'step'):
+        if self.cfg['randomize_ball_drop'] and step_or_reset == 'reset':
+            # Randomize ball size
+            ball_size = np.random.uniform(self.cfg['ball_size']['min'], self.cfg['ball_size']['max'])
+            self.object_scales['ball'] = ball_size
+            b_min, b_max = self.cfg['ball_mass'][step_or_reset]
+            self.ball_mass = np.random.uniform(b_min, b_max)
+            self.drop_ball()
         
-        # TODO Randomize ball size
-        # ball_size = np.random.uniform(self.cfg['ball_size_min'], self.cfg['ball_size_max'])
-        # p.changeVisualShape(self.ball_id, -1, radius=ball_size)
-        
-        b_min, b_max = self.cfg['ball_mass'][step_or_reset]
         r_min, r_max = self.cfg['ball_rolling_friction'][step_or_reset]
         s_min, s_max = self.cfg['ball_spinning_friction'][step_or_reset]
         l_min, l_max = self.cfg['ball_lateral_friction'][step_or_reset]
         p_min, p_max = self.cfg['plate_lateral_friction'][step_or_reset]
 
-        ball_mass = np.random.uniform(b_min, b_max)
         rollingFriction = np.random.uniform(r_min, r_max)
         spinningFriction = np.random.uniform(s_min, s_max)
         lateralFriction = np.random.uniform(l_min, l_max)
         plate_friction = np.random.uniform(p_min, p_max)
 
-        p.changeDynamics(self.ball_id, -1, mass=ball_mass,
+        p.changeDynamics(self.ball_id, -1, mass=self.ball_mass,
                             rollingFriction=rollingFriction,
                             spinningFriction=spinningFriction,
                             lateralFriction=lateralFriction)
