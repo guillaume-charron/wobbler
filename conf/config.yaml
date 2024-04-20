@@ -83,5 +83,8 @@ environment:
   plate_lateral_friction: 
     reset: [0.1, 0.6]
     step: [0.17, 0.22]
-  duration_weight: 0.15
-  height_weight: 0.15
+  center_radius: 0.02
+  distance_center_weight: 1.0
+  duration_weight: 0.2
+  height_weight: 0
+  tilt_weight: 20

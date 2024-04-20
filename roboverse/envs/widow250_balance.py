@@ -105,26 +105,28 @@ class Widow250BalanceEnv(Widow250Env):
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
         info['ball_pos'] = self.get_ball_pos()
-        info['plate_pos'] = self.get_plate_pos()
+        info['plate_pos'], plate_quat = self.get_plate_pos_quat()
         info['distance_from_center'] = object_utils.get_distance_from_center(
-            info['ball_pos'], info['plate_pos'])
-        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2]) # TODO is the ball_pos the center of the ball?
+            info['ball_pos'], info['plate_pos'], self.cfg['center_radius'])
+        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
+        info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
         return info
     
     def get_ball_pos(self):
         return object_utils.get_ball_pos(self.ball_id)
     
-    def get_plate_pos(self):
-        return object_utils.get_plate_pos(self.plate_id)
-
+    def get_plate_pos_quat(self):
+        return object_utils.get_plate_pos_quat(self.plate_id)
+    
     def get_reward(self, info):
         if not info:
             info = self.get_info()
         if self.reward_type == "balance":
-            distance_reward = -info['distance_from_center']
+            distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
             duration_reward = self.duration * self.cfg['duration_weight']
             height_reward = -info['height_distance'] * self.cfg['height_weight']
-            return distance_reward + duration_reward + height_reward
+            tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
+            return distance_reward + duration_reward + height_reward + tilt_reward
         else:
             return super().get_reward(info)
         
@@ -170,7 +172,7 @@ class Widow250BalanceEnv(Widow250Env):
         ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
         object_position, object_orientation = bullet.get_object_position(self.objects[self.target_object])
         ball_pos = self.get_ball_pos()
-        plate_pos = self.get_plate_pos()
+        plate_pos, _ = self.get_plate_pos_quat()
         ball_relative_pos = np.array(plate_pos)[:2] - np.array(ball_pos)[:2]
         return {
             'object_position': object_position,
