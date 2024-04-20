@@ -64,7 +64,6 @@ class Widow250BalanceEnv(Widow250Env):
                 self.ball_id = self.objects[object_name]
 
             bullet.step_simulation(self.num_sim_steps_reset)
-
     
     def generate_dynamics(self):  
         if self.should_randomize:
