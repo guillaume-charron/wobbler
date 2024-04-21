@@ -20,7 +20,7 @@ class RandomActResetEnv(Wrapper):
         num_random_act = self._sample_num_repeat()
         # TODO: sample random action and step, possibly resetting env in the process
         for _ in range(num_random_act):
-            obs, _, terminated, truncated, _ = self.step(self.action_space.sample())
+            obs, _, terminated, truncated, _ = self.step([0] * self.env.action_space.shape[0])
             if terminated or truncated:
                 obs, _ = super(RandomActResetEnv, self).reset(**kwargs)
         return obs, ORIG_INFO

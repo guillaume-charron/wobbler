@@ -11,6 +11,7 @@ meta:
   timelimit: 200
   sac_instead: False
   randomize_after_steps: 6_000_000
+  save_every: 1_000_000
   add_to_runname: "wobble"
   from_pretrained: False
 
@@ -61,7 +62,7 @@ sim2real:
   gaussian_obs_scale: 0.01
   gaussian_act_scale: 0.01
   action_repeat_max: 2
-  max_action_repeat_on_reset: 0
+  max_action_repeat_on_reset: 8
 
 environment:
   randomize_every_step: true
@@ -83,5 +84,8 @@ environment:
   plate_lateral_friction: 
     reset: [0.1, 0.6]
     step: [0.17, 0.22]
-  duration_weight: 0.15
-  height_weight: 0.15
+  center_radius: 0.02
+  distance_center_weight: 1.0
+  duration_weight: 0.4
+  height_weight: 0
+  tilt_weight: 20
