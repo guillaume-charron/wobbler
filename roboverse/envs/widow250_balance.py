@@ -24,10 +24,11 @@ class Widow250BalanceEnv(Widow250Env):
     def update_randomization(self, should_randomize):
         self.should_randomize = should_randomize
 
-    def _load_meshes(self):
+    def _load_meshes(self, target_position=None):
         self.table_id = objects.table()
         self.robot_id = objects.widow250()
         self.plate_id = objects.plate()
+        self.debug_sphere_id = None
         self.objects = {}
         object_positions = object_utils.generate_object_positions(self.object_position_low,
                                                                   self.object_position_high,
@@ -35,13 +36,13 @@ class Widow250BalanceEnv(Widow250Env):
         self.original_object_positions = object_positions
 
         for object_name, object_position in zip(self.object_names, object_positions):
-            loaded_object = object_utils.load_object(object_name,
-                                                     object_position,
-                                                     object_quat=self.object_orientations[object_name],
-                                                     scale=self.object_scales[object_name])
-            self.objects[object_name] = loaded_object
+            self.objects[object_name] = object_utils.load_object(object_name,
+                                                    object_position,
+                                                    object_quat=self.object_orientations[object_name],
+                                                    scale=self.object_scales[object_name])
             if object_name == 'ball':
-                self.ball_id = loaded_object
+                self.ball_id = self.objects[object_name]
+                
             bullet.step_simulation(self.num_sim_steps_reset)
         
     def drop_ball(self):
@@ -68,14 +69,14 @@ class Widow250BalanceEnv(Widow250Env):
 
             bullet.step_simulation(self.num_sim_steps_reset)
     
-    def render_target(self, target):
-        # create a sphere (the  goal) in the environment and returns the goal position
-        self.target_object = 'target'
-        self.objects[self.target_object] = object_utils.load_object(
-            'target',
-            target,
-            scale=0.05)
-        bullet.step_simulation(self.num_sim_steps_reset)
+    def render_goal_sphere(self):
+        if self.debug_sphere_id:
+            p.removeBody(self.debug_sphere_id)
+            self.debug_sphere_id = None
+            
+        self.debug_sphere_id = object_utils.create_debug_sphere(self.ee_target_pose)
+
+        bullet.step_simulation(self.num_sim_steps)
     
     def generate_dynamics(self):  
         if self.should_randomize:
@@ -180,15 +181,15 @@ class Widow250BalanceEnv(Widow250Env):
             self.ee_target_pose = target
         else:
             self.ee_target_pose = self._get_target_pose()
-        
+            
         super().reset()
         bullet.load_state(osp.join(OBJECT_IN_GRIPPER_PATH, 'plate_in_gripper_reset.bullet'))
         self.is_gripper_open = False
         self.duration = 0
-
-        # self._load_meshes(self.ee_target_pose)
+           
         if self.cfg["gcrl"]:
-            self.render_target(self.ee_target_pose)
+            self.render_goal_sphere()
+            
         self.drop_ball()
         self.generate_dynamics()
         self.done = False

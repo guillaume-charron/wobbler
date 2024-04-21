@@ -206,6 +206,12 @@ def load_bullet_object(object_name, **kwargs):
     object_id = p.loadURDF(**object_specs)
     return object_id
 
+def create_debug_sphere(position):
+    target_visual_shape = p.createVisualShape(p.GEOM_SPHERE, radius=0.02)
+    sphere_id = p.createMultiBody(baseVisualShapeIndex=target_visual_shape,
+                                  basePosition=position)
+    return sphere_id
+
 
 # TODO(avi) Maybe move this to a different file
 BULLET_OBJECT_SPECS = dict(

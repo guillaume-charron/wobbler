@@ -14,7 +14,6 @@ meta:
   save_every: 1_000_000
   add_to_runname: "wobble"
   from_pretrained: False
-  gcrl: False
 
 # Algorithm specific arguments
 ppo:
@@ -68,6 +67,7 @@ sim2real:
 environment:
   randomize_every_step: true
   randomize_ball_drop: true
+  gcrl: True
   ee_distance_threshold: 0.1
   ball_size: 
     min: 0.4
