@@ -14,6 +14,7 @@ meta:
   save_every: 1_000_000
   add_to_runname: "wobble"
   from_pretrained: False
+  gcrl: False
 
 # Algorithm specific arguments
 ppo:
@@ -67,6 +68,7 @@ sim2real:
 environment:
   randomize_every_step: true
   randomize_ball_drop: true
+  ee_distance_threshold: 0.1
   ball_size: 
     min: 0.4
     max: 0.9
@@ -84,8 +86,8 @@ environment:
   plate_lateral_friction: 
     reset: [0.1, 0.6]
     step: [0.17, 0.22]
-  center_radius: 0.02
+  center_radius: 0.01
   distance_center_weight: 1.0
   duration_weight: 0.4
-  height_weight: 0
-  tilt_weight: 20
+  height_weight: 0.1
+  tilt_weight: 2

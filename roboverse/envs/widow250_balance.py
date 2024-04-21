@@ -16,6 +16,9 @@ class Widow250BalanceEnv(Widow250Env):
     def __init__(self, cfg=None, **kwargs):
         self.cfg = cfg
         self.should_randomize = False
+        self.arm_min_radius = 0.100
+        self.ee_distance_threshold = self.cfg['ee_distance_threshold']
+        self.ee_target_pose = None
         super().__init__(**kwargs)
         
     def update_randomization(self, should_randomize):
@@ -65,6 +68,15 @@ class Widow250BalanceEnv(Widow250Env):
 
             bullet.step_simulation(self.num_sim_steps_reset)
     
+    def render_target(self, target):
+        # create a sphere (the  goal) in the environment and returns the goal position
+        self.target_object = 'target'
+        self.objects[self.target_object] = object_utils.load_object(
+            'target',
+            target,
+            scale=0.05)
+        bullet.step_simulation(self.num_sim_steps_reset)
+    
     def generate_dynamics(self):  
         if self.should_randomize:
             self.randomize_ball('reset')
@@ -104,12 +116,31 @@ class Widow250BalanceEnv(Widow250Env):
 
     def get_info(self):
         info = super(Widow250BalanceEnv, self).get_info()
+        
+        # Balance info
         info['ball_pos'] = self.get_ball_pos()
         info['plate_pos'], plate_quat = self.get_plate_pos_quat()
         info['distance_from_center'] = object_utils.get_distance_from_center(
             info['ball_pos'], info['plate_pos'], self.cfg['center_radius'])
         info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
         info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
+        # ----------------
+        
+        # GCRL info
+        ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
+        target_coord = np.array(self.ee_target_pose)
+        ee_coord = np.array(ee_pos)
+        euclidean_dist_3d = np.linalg.norm(target_coord - ee_coord)
+        if euclidean_dist_3d <= self.ee_distance_threshold:
+            info['ee_pose_success'] = True
+            info['target_coord'] = self.ee_target_pose
+        else:
+            info['ee_pose_success'] = False
+
+        info['euclidean_distance'] = euclidean_dist_3d
+        info['target_coord'] = self.ee_target_pose
+        # ----------------
+        
         return info
     
     def get_ball_pos(self):
@@ -127,17 +158,40 @@ class Widow250BalanceEnv(Widow250Env):
             height_reward = -info['height_distance'] * self.cfg['height_weight']
             tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
             return distance_reward + duration_reward + height_reward + tilt_reward
+        if self.reward_type == 'ee_position':
+            reward = 0
+            # Reward weight for reaching the goal position
+            g_w = 1000
+            # Reward weight according to the distance to the goal
+            d_w = 10
+
+            # Reward base
+            reward += np.exp(-d_w * info['euclidean_distance'])
+
+            if info['ee_pose_success']:
+                reward = g_w * 1
+                self.done = True # TODO - check this, maybe done gcrl but not balance
         else:
             return super().get_reward(info)
         
     def reset(self, target=None, seed=None, options=None):
+        if target:
+            assert len(target) == 6
+            self.ee_target_pose = target
+        else:
+            self.ee_target_pose = self._get_target_pose()
+        
         super().reset()
         bullet.load_state(osp.join(OBJECT_IN_GRIPPER_PATH, 'plate_in_gripper_reset.bullet'))
         self.is_gripper_open = False
         self.duration = 0
 
+        # self._load_meshes(self.ee_target_pose)
+        if self.cfg["gcrl"]:
+            self.render_target(self.ee_target_pose)
         self.drop_ball()
         self.generate_dynamics()
+        self.done = False
 
         return self.get_observation()
 
@@ -179,6 +233,11 @@ class Widow250BalanceEnv(Widow250Env):
             'object_orientation': object_orientation,
             'state': np.concatenate((ee_pos, ee_quat, ball_relative_pos)),
         }
+        
+    def _get_target_pose(self) -> np.ndarray:
+        workspace_pose = bullet.get_random_workspace_pose(self.ee_pos_low, self.ee_pos_high, self.arm_min_radius)
+        # workspace_pose = [sum(coord) for coord in zip(workspace_pose, self.base_position)]
+        return workspace_pose
 
 class Widow250BalanceKeyboardEnv(Widow250Env):
     def __init__(self,
