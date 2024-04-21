@@ -206,8 +206,8 @@ def load_bullet_object(object_name, **kwargs):
     object_id = p.loadURDF(**object_specs)
     return object_id
 
-def create_debug_sphere(position):
-    target_visual_shape = p.createVisualShape(p.GEOM_SPHERE, radius=0.02)
+def create_debug_sphere(position, color=(1, 0, 0, 0.4)):
+    target_visual_shape = p.createVisualShape(p.GEOM_SPHERE, radius=0.02, rgbaColor=color)
     sphere_id = p.createMultiBody(baseVisualShapeIndex=target_visual_shape,
                                   basePosition=position)
     return sphere_id
