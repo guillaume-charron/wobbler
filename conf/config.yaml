@@ -87,7 +87,10 @@ environment:
     reset: [0.1, 0.6]
     step: [0.17, 0.22]
   center_radius: 0.01
-  distance_center_weight: 1.0
-  duration_weight: 0.4
-  height_weight: 0.1
-  tilt_weight: 2
+  distance_center_weight: 5
+  duration_weight: 3
+  height_weight: 1
+  tilt_weight: 0.2
+  # GCRL:
+  distance_goal_weight: 10 # Reward weight according to the distance to the goal
+  goal_reached_weight: 1000 # Reward when the goal is reached

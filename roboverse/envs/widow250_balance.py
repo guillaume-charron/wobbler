@@ -153,25 +153,27 @@ class Widow250BalanceEnv(Widow250Env):
     def get_reward(self, info):
         if not info:
             info = self.get_info()
+        reward = 0
         if self.reward_type == "balance":
+            
             distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
             duration_reward = self.duration * self.cfg['duration_weight']
             height_reward = -info['height_distance'] * self.cfg['height_weight']
             tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
-            return distance_reward + duration_reward + height_reward + tilt_reward
-        if self.reward_type == 'ee_position':
-            reward = 0
-            # Reward weight for reaching the goal position
-            g_w = 1000
-            # Reward weight according to the distance to the goal
-            d_w = 10
+            
+            reward += distance_reward + duration_reward + height_reward + tilt_reward
+            
+            if self.cfg["gcrl"]:
+                g_w = self.cfg['goal_reached_weight']
+                d_w = self.cfg['distance_goal_weight']
 
-            # Reward base
-            reward += np.exp(-d_w * info['euclidean_distance'])
+                reward += np.exp(-d_w * info['euclidean_distance'])
 
-            if info['ee_pose_success']:
-                reward = g_w * 1
-                self.done = True # TODO - check this, maybe done gcrl but not balance
+                if info['ee_pose_success']:
+                    reward = g_w * 1
+                    self.done = True
+      
+            return reward
         else:
             return super().get_reward(info)
         
