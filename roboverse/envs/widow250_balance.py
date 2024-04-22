@@ -74,7 +74,7 @@ class Widow250BalanceEnv(Widow250Env):
             p.removeBody(self.debug_sphere_id)
             self.debug_sphere_id = None
             
-        self.debug_sphere_id = object_utils.create_debug_sphere(self.ee_target_pose)
+        self.debug_sphere_id = object_utils.create_debug_sphere(self.ee_target_pose, self.ee_distance_threshold)
 
         bullet.step_simulation(self.num_sim_steps)
     
