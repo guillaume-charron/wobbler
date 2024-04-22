@@ -1,5 +1,6 @@
 numpy==1.21.4
-gym==0.17.3
+gym==0.26.1
+gym-notices==0.0.8
 free-mujoco-py==2.1.6
 pybullet==3.2.6
 tensorboard==2.3.0
@@ -29,3 +30,4 @@ gymnasium
 protobuf==3.20.*
 moviepy
 modern_robotics
+robo-gym-server-modules

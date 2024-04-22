@@ -1,0 +1,68 @@
+workspace_area:
+  # Values for the recommended workspace area
+  r: 0.650
+  min_r: 0.100
+  # workspace area in m
+  limited: false
+  width: 0
+  height: 0
+  depth: 0
+  gripper_length: 0
+  # workspace origin offset in m
+  origin_offset: [0, 0, 0]
+
+joint_limits:
+  waist:
+    # acceleration limits are not publicly available
+    has_acceleration_limits: false
+    has_effort_limits: false
+    has_position_limits: true
+    has_velocity_limits: true
+    max_position: 3.14159
+    max_velocity: 0.2
+    min_position: -3.14159
+  shoulder:
+    # acceleration limits are not publicly available
+    has_acceleration_limits: false
+    has_effort_limits: false
+    has_position_limits: true
+    has_velocity_limits: true
+    max_position: 1.98968
+    max_velocity: 0.2
+    min_position: -1.88496
+  elbow:
+    # acceleration limits are not publicly available
+    has_acceleration_limits: false
+    has_effort_limits: false
+    has_position_limits: true
+    has_velocity_limits: true
+    max_position: 1.6057
+    max_velocity: 0.2
+    min_position: -2.14675
+  forearm_roll:
+    # acceleration limits are not publicly available
+    has_acceleration_limits: false
+    has_effort_limits: false
+    has_position_limits: true
+    has_velocity_limits: true
+    max_position: 3.14159
+    max_velocity: 0.2
+    min_position: -3.14159
+  wrist_angle:
+    # acceleration limits are not publicly available
+    has_acceleration_limits: false
+    has_effort_limits: false
+    has_position_limits: true
+    has_velocity_limits: true
+    max_position: 2.14675
+    max_velocity: 0.2
+    min_position: -1.74533
+  wrist_rotate:
+    # acceleration limits are not publicly available
+    has_acceleration_limits: false
+    has_effort_limits: false
+    has_position_limits: true
+    has_velocity_limits: true
+    max_position: 3.14159
+    max_velocity: 0.2
+    min_position: -3.14159
