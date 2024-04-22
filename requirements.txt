@@ -26,5 +26,3 @@ wheel
 gin-config
 stable-baselines3
 gymnasium
-protobuf==3.20.*
-moviepy
