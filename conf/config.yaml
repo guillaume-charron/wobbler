@@ -3,7 +3,7 @@ meta:
   run_name: None # (computed in runtime)
   seed: 1   # seed of the experiment 
   torch_deterministic: True   # if toggled, `torch.backends.cudnn.deterministic=False` 
-  cuda: True   # if toggled, cuda will be enabled by default 
+  cuda: False   # if toggled, cuda will be enabled by default 
   track: True   # if toggled, this experiment will be tracked with Comet.ml
   # capture_video: False   # whether to capture videos of the agent performances (check out `videos` folder)
   save_model: True   # whether to save model into the `runs/{run_name}` folder
@@ -17,15 +17,15 @@ meta:
 
 # Algorithm specific arguments
 ppo:
-  num_envs: 64
+  num_envs: 128
   eval_frequency: 200_000
   total_timesteps: 10_000_000   # total timesteps of the experiments
   learning_rate: 3e-4   # the learning rate of the optimizer 
-  num_steps: 4096   # the number of steps to run in each environment per policy rollout
+  num_steps: 8192   # the number of steps to run in each environment per policy rollout
   anneal_lr: True   # Toggle learning rate annealing for policy and value networks 
   gamma: 0.99   # the discount factor gamma 
   gae_lambda: 0.95   # the lambda for the general advantage estimation 
-  num_minibatches: 64   # the number of mini-batches 
+  num_minibatches: 128   # the number of mini-batches 
   update_epochs: 10   # the K epochs to update the policy 
   norm_adv: True   # Toggles advantages normalization 
   clip_coef: 0.2   # the surrogate clipping coefficient 
@@ -68,7 +68,7 @@ environment:
   randomize_every_step: true
   randomize_ball_drop: true
   gcrl: True
-  ee_distance_threshold: 0.1
+  ee_distance_threshold: 0.05
   ball_size: 
     min: 0.4
     max: 0.9

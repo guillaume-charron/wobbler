@@ -93,7 +93,6 @@ def train(args, logger, PATH):
         except:
             print("Could not load the pretrained agent, continuing with a new agent")
 
-    torch.manual_seed(args.seed)
     optimizer = optim.AdamW(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
