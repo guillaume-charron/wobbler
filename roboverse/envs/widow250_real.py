@@ -11,7 +11,7 @@ from numpy import ndarray, dtype
 import roboverse.bullet as bullet
 from robo_gym.envs.simulation_wrapper import Simulation
 
-RESET_JOINT_VALUES = [0.0757, 0.0074, 0.0122, -0.00011, 0.0058, -0.00076, 0., 0.036, -0.036]
+RESET_JOINT_VALUES = [0.0757, -0.0574, 0.0122, -1.55, 0.0058, -0.00076, 0., 0.036, -0.036]
 
 RESET_JOINT_VALUES_GRIPPER_CLOSED = [1.57, -0.6, -0.6, 0, -1.57, 0., 0., 0.015, -0.015]
 RESET_JOINT_INDICES = [0, 1, 2, 3, 4, 5, 7, 10, 11]
@@ -284,28 +284,10 @@ class Widow250EnvROSARob(Widow250EnvROS):
 
 if __name__ == "__main__":
     # env = Widow250EnvRosASim(gui=True, ip='127.0.0.1', robot_model='wx250s')
-    env = Widow250EnvROSARob(rs_address='192.168.1.101:50051')
     import time
-    STATE = [0.5, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.036, -0.036]
-
-    obs, rew, done, _, info = env.step(np.asarray(STATE))
-    print("reward", rew, "info", info)
-    print(env.get_info())
-    print(env.get_observation())
-    time.sleep(5)
-    # env.reset()
-    # import IPython; IPython.embed()
-
-    # for i in range(10):
-    #     print(i)
-    #     obs, rew, done, _, info = env.step(np.asarray([0.05, 0., 0., 0., 0., 0.]))
-    #     print("reward", rew, "info", info)
-    #     time.sleep(0.1)
-
-    # env.reset()
-    # time.sleep(1)
-    # for _ in range(25):
-    #     env.step(np.asarray([0., 0., 0., 0., 0., 0.]))
-    #     time.sleep(0.1)
-
+    env = Widow250EnvROSARob(rs_address='192.168.1.101:50051')
+    STATE = [0., 0., 0., 0, 0., 0., 0., 0., 0.]
+    env.reset()
+    env.step(np.asarray(STATE))
+    time.sleep(0.1)
     env.reset()
