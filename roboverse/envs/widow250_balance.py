@@ -305,6 +305,9 @@ class Widow250BalanceROS(Widow250EnvROS):
         self.ee_distance_threshold = self.cfg['ee_distance_threshold']
         self.ee_target_pose = None
         self.nb_none_ball = 0
+        self.action_space = gym.spaces.Box(
+            low=self.action_space.low[:-2], high=self.action_space.high[:-2]
+        )
     
     # TODO in the server simulation maybe?
     # def render_goal_sphere(self):
@@ -396,25 +399,13 @@ class Widow250BalanceROS(Widow250EnvROS):
     def _set_observation_space(self):
         robot_state_dim = 9  # XYZ + QUAT + XY_BALL
         obs_bound = 100
-        if self.observation_mode == 'pixels':
-            self.image_length = (self.observation_img_dim ** 2) * 3
-            img_space = gym.spaces.Box(0, 1, (self.image_length,),
-                                       dtype=np.float32)
-            obs_high = np.ones(robot_state_dim) * obs_bound
-            state_space = gym.spaces.Box(-obs_high, obs_high)
-            object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
-            object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
-            spaces = {'image': img_space, 'state': state_space, 'object_position': object_position,
-                      'object_orientation': object_orientation}
-            self.observation_space = gym.spaces.Dict(spaces)
-        else:
-            obs_high = np.ones(robot_state_dim) * obs_bound
-            state_space = gym.spaces.Box(-obs_high, obs_high)
-            object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
-            object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
-            spaces = {'state': state_space, 'object_position': object_position,
-                        'object_orientation': object_orientation}
-            self.observation_space = gym.spaces.Dict(spaces)
+        obs_high = np.ones(robot_state_dim) * obs_bound
+        state_space = gym.spaces.Box(-obs_high, obs_high)
+        object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
+        object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
+        spaces = {'state': state_space, 'object_position': object_position,
+                    'object_orientation': object_orientation}
+        self.observation_space = gym.spaces.Dict(spaces)['state']
 
     def get_observation(self):
         
@@ -435,12 +426,8 @@ class Widow250BalanceROS(Widow250EnvROS):
         print(plate_pos, ball_pos)
         
         
-        ball_relative_pos = np.array(plate_pos) - np.array(ball_pos)
-        return {
-            'object_position': object_position,
-            'object_orientation': object_orientation,
-            'state': np.concatenate((self.ee_pos, self.ee_quat, ball_relative_pos)),
-        }
+        ball_relative_pos = (np.array(plate_pos) - np.array(ball_pos)) / 1000 # TODO: check if this is correct + config it
+        return np.concatenate((self.ee_pos, self.ee_quat, ball_relative_pos))
         
     def _get_target_pose(self) -> np.ndarray:
         workspace_pose = bullet.get_random_workspace_pose(self.ee_pos_low, self.ee_pos_high, self.arm_min_radius)

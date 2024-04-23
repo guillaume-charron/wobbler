@@ -2,6 +2,7 @@
 import functools
 import random
 import time
+import os
 
 import gymnasium as gym
 import hydra
@@ -17,6 +18,9 @@ from torch.distributions.normal import Normal
 from roble import balancegym
 from roble.sim2real_wrap.thunk_sim2real_wrap import make_thunk
 from roboverse.envs.widow250_balance import Widow250BalanceROS
+from roboverse.utils.camera import Camera
+from roble.sim2real_wrap.history import HistoryWrapper
+from roble.sim2real_wrap.last_action import LastActionWrapper
 
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
@@ -28,8 +32,14 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
+        # observation_space = envs.single_observation_space
+        # action_space = envs.single_action_space
+        observation_space = envs.observation_space.shape
+        action_space = envs.action_space.shape
+        print("Observation space:", observation_space)
+        print("Action space:", action_space)
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(observation_space).prod(), 64)),
             nn.LeakyReLU(),
             layer_init(nn.Linear(64, 128)),
             nn.LeakyReLU(),
@@ -38,15 +48,15 @@ class Agent(nn.Module):
             layer_init(nn.Linear(64, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(observation_space).prod(), 64)),
             nn.LeakyReLU(),
             layer_init(nn.Linear(64, 128)),
             nn.LeakyReLU(),
             layer_init(nn.Linear(128, 64)),
             nn.LeakyReLU(),
-            layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
+            layer_init(nn.Linear(64, np.prod(action_space)), std=0.01),
         )
-        self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
+        self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(action_space)))
 
     def get_value(self, x):
         return self.critic(x)
@@ -285,33 +295,49 @@ def train(args, logger, PATH):
     envs.close()
 
 def run_ppo_policy(args, PATH):
-    device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.backends.cudnn.deterministic = args.torch_deterministic
+    device = torch.device("cuda" if torch.cuda.is_available() and args.meta.cuda else "cpu")
+    seed=args.meta.seed
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = args.meta.torch_deterministic
     
-    env = Widow250BalanceROS()
-    model_path = f"{PATH}/{args.trained_model}.cleanrl_model"
+    camera = Camera()
+    env = Widow250BalanceROS(camera=camera, cfg=args.environment, rs_address=args.meta.ros_adress)
+    if args.sim2real.history_len > 1:
+        env = HistoryWrapper(env, length=args.sim2real.history_len)
+    if args.sim2real.add_last_action:
+        env = LastActionWrapper(env)
+    
     agent = Agent(env).to(device)
-    try:
-        agent.load_state_dict(torch.load(model_path))
-        print("Successfully loaded the pretrained agent from", model_path)
-    except:
-        print("Could not load the pretrained agent, exiting")
-        return
+    
+    model_path = args.meta.from_pretrained
+    print("Loading the pretrained agent from ", model_path)
+    # try:
+        # try finding model
+    print(os.path.exists(model_path))
+    agent.load_state_dict(torch.load(model_path))
+    print("Successfully loaded the pretrained agent from", model_path)
+    # except:
+    #     print("Could not load the pretrained agent, exiting")
+    #     return
     
     start_time = time.time()
-    next_obs, _ = env.reset(seed=args.seed)
+    next_obs, _ = env.reset(seed=seed)
+    next_obs = torch.tensor(next_obs, dtype=torch.float32).to(device)
+    print(next_obs)
     done = False
     while not done:
         with torch.no_grad():
-            action = agent.get_action(next_obs)
-            
-        next_obs, reward, termination, truncation, infos = env.step(action.cpu().numpy())
+            action = agent.get_action(next_obs.unsqueeze(0))
+            print("Feeding action", action)
+        next_obs, reward, termination, truncation, infos = env.step(action[0].cpu().numpy())
+        next_obs = torch.tensor(next_obs, dtype=torch.float32).to(device)
+        print(infos)
         done = termination or truncation
-        # next_obs, next_done = torch.tensor(next_obs).to(device), torch.tensor(next_done).to(device)
-
+        time.sleep(0.3)
+    end_time = time.time()
+    print(f"Time taken to run policy: {end_time - start_time} seconds")
 
 @hydra.main(config_path="config", config_name="conf")
 def main(args):

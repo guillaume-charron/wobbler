@@ -18,7 +18,7 @@ def analyze_frame(frame, draw=False):
     frame_hsv = cv2.cvtColor(gaussian, cv2.COLOR_BGR2HSV)
 
     mask = cv2.inRange(frame_hsv, lower, upper)
-    # cv2.imshow('mask', mask)
+    cv2.imshow('mask', mask)
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     rect_center_pos = None
@@ -39,8 +39,11 @@ def analyze_frame(frame, draw=False):
 
                 # Find center of contour
                 M = cv2.moments(cnt)
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
+                if M["m00"] != 0:
+                    cX = int(M["m10"] / M["m00"])
+                    cY = int(M["m01"] / M["m00"])
+                else:
+                    cX, cY = 0, 0
                 if draw:
                     cv2.circle(new_frame, (cX, cY), 7, (255, 0, 0), -1)
                 rect_center_pos = (cX, cY)

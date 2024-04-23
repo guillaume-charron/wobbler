@@ -4,7 +4,7 @@ meta:
   seed: 1   # seed of the experiment 
   torch_deterministic: True   # if toggled, `torch.backends.cudnn.deterministic=False` 
   cuda: False   # if toggled, cuda will be enabled by default 
-  track: True   # if toggled, this experiment will be tracked with Comet.ml
+  track: False   # if toggled, this experiment will be tracked with Comet.ml
   # capture_video: False   # whether to capture videos of the agent performances (check out `videos` folder)
   save_model: True   # whether to save model into the `runs/{run_name}` folder
   env_id: "Widow250BallBalancing-v0"   # the id of the environment
@@ -13,8 +13,9 @@ meta:
   randomize_after_steps: 11_000_000
   save_every: 1_000_000
   add_to_runname: "wobble"
-  from_pretrained: False
+  from_pretrained: "models/ppo.cleanrl_model"
   real_application: True
+  ros_adress: '192.168.1.101:50051'
 
 # Algorithm specific arguments
 ppo:
