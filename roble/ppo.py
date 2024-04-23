@@ -16,6 +16,7 @@ from torch.distributions.normal import Normal
 #from roble.sim2real_wrap.thunk_sim2real_wrap import make_thunk
 from roble import balancegym
 from roble.sim2real_wrap.thunk_sim2real_wrap import make_thunk
+from roboverse.envs.widow250_balance import Widow250BalanceROS
 
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
@@ -283,10 +284,37 @@ def train(args, logger, PATH):
 
     envs.close()
 
+def run_ppo_policy(args, PATH):
+    device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = args.torch_deterministic
+    
+    env = Widow250BalanceROS()
+    model_path = f"{PATH}/{args.trained_model}.cleanrl_model"
+    agent = Agent(env).to(device)
+    try:
+        agent.load_state_dict(torch.load(model_path))
+        print("Successfully loaded the pretrained agent from", model_path)
+    except:
+        print("Could not load the pretrained agent, exiting")
+        return
+    
+    start_time = time.time()
+    next_obs, _ = env.reset(seed=args.seed)
+    done = False
+    while not done:
+        with torch.no_grad():
+            action = agent.get_action(next_obs)
+            
+        next_obs, reward, termination, truncation, infos = env.step(action.cpu().numpy())
+        done = termination or truncation
+        # next_obs, next_done = torch.tensor(next_obs).to(device), torch.tensor(next_done).to(device)
+
 
 @hydra.main(config_path="config", config_name="conf")
 def main(args):
-
     train(args, None)
 
 

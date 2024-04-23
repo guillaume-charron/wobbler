@@ -83,6 +83,8 @@ def my_main(args: DictConfig):
         args.buffer_size = int(args.buffer_size)
 
         sac.train(args, logger, PATH)
+    elif args.real_application:
+        ppo.run_ppo_policy(args, PATH)
     else:
         args = flatten_conf(new_args, args.ppo)
 
