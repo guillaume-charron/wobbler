@@ -9,8 +9,8 @@ def analyze_frame(frame, draw=False):
     plate_center_pos = None
     ball_center_pos = None
     # green color
-    lower = (59, 59, 165)
-    upper = (95, 107, 255)
+    lower = (65, 61, 58)
+    upper = (179, 255, 255)
 
     imutils.resize(frame, width=600)
     new_frame = frame.copy()
@@ -18,6 +18,7 @@ def analyze_frame(frame, draw=False):
     frame_hsv = cv2.cvtColor(gaussian, cv2.COLOR_BGR2HSV)
 
     mask = cv2.inRange(frame_hsv, lower, upper)
+    # cv2.imshow('mask', mask)
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     rect_center_pos = None
@@ -78,11 +79,13 @@ def analyze_frame(frame, draw=False):
 
 
 if __name__ == "__main__":
-    cam = Camera(cam_src, cam_width, cam_height, cam_fps)
+    cam = Camera(0, cam_width, cam_height, cam_fps)
     while True:
         frame = cam.get_frame()
+        print(frame)
         if frame is not None:
             plate_center_pos, ball_center_pos, new_frame = analyze_frame(frame, draw=True)
+            new_frame = cv2.resize(new_frame, (600, 400))
             cv2.imshow('frame', new_frame)
             cv2.imwrite('frame_green.jpg', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):

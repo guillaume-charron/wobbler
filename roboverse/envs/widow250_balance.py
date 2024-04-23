@@ -8,7 +8,7 @@ import roboverse
 import roboverse.bullet as bullet
 from roboverse.bullet import object_utils
 from roboverse.envs import objects
-from roboverse.envs import widow250_real
+from roboverse.envs.widow250_real import Widow250EnvROS
 from roboverse.utils.ball_tracking import analyze_frame
 from roboverse.utils.camera import Camera
 
@@ -297,13 +297,13 @@ class Widow250BalanceKeyboardEnv(Widow250Env):
         self.is_gripper_open = self.default_gripper_state         
         return self.get_observation(), self.get_info()
 
-class Widow250BalanceROS(widow250_real):
-    def __init__(self, cfg=None **kwargs):
-        super(Widow250BalanceROS, self).__init__(**kwargs)
+class Widow250BalanceROS(Widow250EnvROS):
+    def __init__(self, camera, cfg=None, **kwargs):
         self.cfg = cfg
+        self.camera = camera
+        super(Widow250BalanceROS, self).__init__(**kwargs)
         self.ee_distance_threshold = self.cfg['ee_distance_threshold']
         self.ee_target_pose = None
-        self.camera = Camera()
     
     # TODO in the server simulation maybe?
     # def render_goal_sphere(self):
@@ -314,31 +314,27 @@ class Widow250BalanceROS(widow250_real):
     #     self.debug_sphere_id = object_utils.create_debug_sphere(self.ee_target_pose, self.ee_distance_threshold)
 
     #     bullet.step_simulation(self.num_sim_steps)
+    def get_plate_ball_pos(self):
+        frame = self.camera.get_frame()
+        if frame is not None:
+            plate_pos, ball_pos, _ = analyze_frame(frame)
+        if frame is None or plate_pos is None or ball_pos is None:
+            plate_pos, ball_pos = [0, 0], [0, 0]
+        return plate_pos, ball_pos
 
     def get_info(self):
         info = super().get_info()
 
         # Balance info
-        info['ball_pos'] = self.get_ball_pos()
-        info['plate_pos'], plate_quat = self.get_plate_pos_quat()
-        #TODO image based
+        info['ball_pos'], info['plate_pos'] = self.get_plate_ball_pos()
+        print(info['ball_pos'], info['plate_pos'])
         info['distance_from_center'] = object_utils.get_distance_from_center(
             info['ball_pos'], info['plate_pos'], self.cfg['center_radius'])
-        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
-        info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
+        # info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
+        # info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
         # ----------------
         
         return info
-    
-    def get_ball_pos(self):
-        frame = self.camera.get_frame()
-        plate_center_pos, ball_center_pos, new_frame = analyze_frame(frame)
-        return 
-    
-    def get_plate_pos_quat(self):
-        # return object_utils.get_plate_pos_quat(self.plate_id)
-        # TODO image based
-        pass
     
     def get_reward(self, info):
         if not info:
@@ -384,10 +380,11 @@ class Widow250BalanceROS(widow250_real):
         obs, reward, done, truncated, info = super().step(action)
 
         reward = self.get_reward(info)
-        if info['ball_pos'][2] < -0.35: # TODO put this in config or something
-            truncated = True
-        else:
-            self.duration += 1
+        # TODO make it so we don't detect the ball if it's not in the previous 5 frames
+        # if info['ball_pos'][2] < -0.35: # TODO put this in config or something
+        #     truncated = True
+        # else:
+        #     self.duration += 1
         
         return obs, reward, done, truncated, info   
 
@@ -429,11 +426,7 @@ class Widow250BalanceROS(widow250_real):
         object_position = np.array(self.ee_target_pose)
         object_orientation = np.array([0, 0, 0, 1])
         
-        frame = self.camera.get_frame()
-        if frame is not None:
-            plate_pos, ball_pos, _ = analyze_frame(frame)
-        else:
-            plate_pos, ball_pos = [0, 0], [0, 0]
+        plate_pos, ball_pos = self.get_plate_ball_pos()
         print(plate_pos, ball_pos)
         
         
@@ -449,14 +442,33 @@ class Widow250BalanceROS(widow250_real):
         return workspace_pose
 
 if __name__ == "__main__":
-    env = roboverse.make('Widow250BallBalancing-v0',
-                         gui=True, transpose_image=False)
-    env.reset()
+    # env = roboverse.make('Widow250BallBalancing-v0',
+    #                      gui=True, transpose_image=False)
+    # env.reset()
 
-    for j in range(5):
-        for i in range(20):
-            obs, rew, done, info = env.step(
-                np.asarray([-0.05, 0., 0., 0., 0., 0.5, 0., 0.]))
-            print("reward", rew, "info", info)
-            time.sleep(0.1)
-        env.reset()
+    # for j in range(5):
+    #     for i in range(20):
+    #         obs, rew, done, info = env.step(
+    #             np.asarray([-0.05, 0., 0., 0., 0., 0.5, 0., 0.]))
+    #         print("reward", rew, "info", info)
+    #         time.sleep(0.1)
+    #     env.reset()
+    conf = {
+        "ee_distance_threshold": 0.1,
+        "center_radius": 0.1,
+        "distance_center_weight": 1,
+        "duration_weight": 1,
+        "height_weight": 1,
+        "goal_reached_weight": 1,
+        "distance_goal_weight": 1,
+        "gcrl": False,
+        
+    }
+    import time
+    camera = Camera()
+    env = Widow250BalanceROS(camera=camera, cfg=conf, rs_address='192.168.1.101:50051')
+    STATE = [0., 0., 0., 0, 0., 0., 0., 0., 0.]
+    env.reset()
+    env.step(np.asarray(STATE))
+    time.sleep(0.1)
+    env.reset()
