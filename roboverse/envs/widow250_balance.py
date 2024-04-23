@@ -304,6 +304,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         super(Widow250BalanceROS, self).__init__(**kwargs)
         self.ee_distance_threshold = self.cfg['ee_distance_threshold']
         self.ee_target_pose = None
+        self.nb_none_ball = 0
     
     # TODO in the server simulation maybe?
     # def render_goal_sphere(self):
@@ -341,13 +342,14 @@ class Widow250BalanceROS(Widow250EnvROS):
             info = self.get_info()
         reward = 0
         if self.reward_type == "balance":
-            
+            if info['ball_pos'] == [0, 0]:
+                return 0
             distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
             duration_reward = self.duration * self.cfg['duration_weight']
-            height_reward = -info['height_distance'] * self.cfg['height_weight']
-            tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
+            # height_reward = -info['height_distance'] * self.cfg['height_weight']
+            # tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
             
-            reward += distance_reward + duration_reward + height_reward + tilt_reward
+            reward += distance_reward + duration_reward
             
             if self.cfg["gcrl"]:
                 g_w = self.cfg['goal_reached_weight']
@@ -367,6 +369,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         obs, info = super().reset()
         self.is_gripper_open = False
         self.duration = 0
+        self.nb_none_ball = 0
         self.done = False
            
         # TODO render in env simulation
@@ -380,12 +383,14 @@ class Widow250BalanceROS(Widow250EnvROS):
         obs, reward, done, truncated, info = super().step(action)
 
         reward = self.get_reward(info)
-        # TODO make it so we don't detect the ball if it's not in the previous 5 frames
-        # if info['ball_pos'][2] < -0.35: # TODO put this in config or something
-        #     truncated = True
-        # else:
-        #     self.duration += 1
-        
+        if reward == 0:
+            self.nb_none_ball += 1
+            if self.nb_none_ball > 5:
+                truncated = True
+        else:
+            self.nb_none_ball = 0
+            self.duration += 1
+
         return obs, reward, done, truncated, info   
 
     def _set_observation_space(self):
