@@ -8,6 +8,9 @@ import roboverse
 import roboverse.bullet as bullet
 from roboverse.bullet import object_utils
 from roboverse.envs import objects
+from roboverse.envs import widow250_real
+from roboverse.utils.ball_tracking import analyze_frame
+from roboverse.utils.camera import Camera
 
 OBJECT_IN_GRIPPER_PATH = osp.join(osp.dirname(osp.dirname(osp.realpath(__file__))),
                                  'assets/bullet-objects/bullet_saved_states/objects_in_gripper/')
@@ -293,6 +296,157 @@ class Widow250BalanceKeyboardEnv(Widow250Env):
             self.reset_joint_values)
         self.is_gripper_open = self.default_gripper_state         
         return self.get_observation(), self.get_info()
+
+class Widow250BalanceROS(widow250_real):
+    def __init__(self, cfg=None **kwargs):
+        super(Widow250BalanceROS, self).__init__(**kwargs)
+        self.cfg = cfg
+        self.ee_distance_threshold = self.cfg['ee_distance_threshold']
+        self.ee_target_pose = None
+        self.camera = Camera()
+    
+    # TODO in the server simulation maybe?
+    # def render_goal_sphere(self):
+    #     if self.debug_sphere_id:
+    #         p.removeBody(self.debug_sphere_id)
+    #         self.debug_sphere_id = None
+            
+    #     self.debug_sphere_id = object_utils.create_debug_sphere(self.ee_target_pose, self.ee_distance_threshold)
+
+    #     bullet.step_simulation(self.num_sim_steps)
+
+    def get_info(self):
+        info = super().get_info()
+
+        # Balance info
+        info['ball_pos'] = self.get_ball_pos()
+        info['plate_pos'], plate_quat = self.get_plate_pos_quat()
+        #TODO image based
+        info['distance_from_center'] = object_utils.get_distance_from_center(
+            info['ball_pos'], info['plate_pos'], self.cfg['center_radius'])
+        info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
+        info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
+        # ----------------
+        
+        return info
+    
+    def get_ball_pos(self):
+        frame = self.camera.get_frame()
+        plate_center_pos, ball_center_pos, new_frame = analyze_frame(frame)
+        return 
+    
+    def get_plate_pos_quat(self):
+        # return object_utils.get_plate_pos_quat(self.plate_id)
+        # TODO image based
+        pass
+    
+    def get_reward(self, info):
+        if not info:
+            info = self.get_info()
+        reward = 0
+        if self.reward_type == "balance":
+            
+            distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
+            duration_reward = self.duration * self.cfg['duration_weight']
+            height_reward = -info['height_distance'] * self.cfg['height_weight']
+            tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
+            
+            reward += distance_reward + duration_reward + height_reward + tilt_reward
+            
+            if self.cfg["gcrl"]:
+                g_w = self.cfg['goal_reached_weight']
+                d_w = self.cfg['distance_goal_weight']
+
+                reward += np.exp(-d_w * info['euclidean_distance'])
+
+                if info['ee_pose_success']:
+                    reward = g_w * 1
+                    self.done = True
+      
+            return reward
+        else:
+            return super().get_reward(info)
+        
+    def reset(self, target=None, seed=None, options=None):
+        obs, info = super().reset()
+        self.is_gripper_open = False
+        self.duration = 0
+        self.done = False
+           
+        # TODO render in env simulation
+        # if self.cfg["gcrl"]:
+        #     self.render_goal_sphere()
+
+        return obs, info
+
+    def step(self, action):
+        
+        obs, reward, done, truncated, info = super().step(action)
+
+        reward = self.get_reward(info)
+        if info['ball_pos'][2] < -0.35: # TODO put this in config or something
+            truncated = True
+        else:
+            self.duration += 1
+        
+        return obs, reward, done, truncated, info   
+
+    def _set_observation_space(self):
+        robot_state_dim = 9  # XYZ + QUAT + XY_BALL
+        obs_bound = 100
+        if self.observation_mode == 'pixels':
+            self.image_length = (self.observation_img_dim ** 2) * 3
+            img_space = gym.spaces.Box(0, 1, (self.image_length,),
+                                       dtype=np.float32)
+            obs_high = np.ones(robot_state_dim) * obs_bound
+            state_space = gym.spaces.Box(-obs_high, obs_high)
+            object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
+            object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
+            spaces = {'image': img_space, 'state': state_space, 'object_position': object_position,
+                      'object_orientation': object_orientation}
+            self.observation_space = gym.spaces.Dict(spaces)
+        else:
+            obs_high = np.ones(robot_state_dim) * obs_bound
+            state_space = gym.spaces.Box(-obs_high, obs_high)
+            object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
+            object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
+            spaces = {'state': state_space, 'object_position': object_position,
+                        'object_orientation': object_orientation}
+            self.observation_space = gym.spaces.Dict(spaces)
+
+    def get_observation(self):
+        
+        # Get Robot Server state
+        rs_state = self.robogym.client.get_state_msg().state_dict
+
+        # Check if the length and keys of the Robot Server state received is correct
+        self.robogym.check_rs_state_keys(rs_state, self.ee_target_pose)
+
+        # Convert the initial state from Robot Server format to environment format
+        self.ee_pos, ee_rot = self.robogym.robot_server_state_to_env_state(rs_state)
+        self.ee_quat = bullet.deg_to_quat(ee_rot)
+        
+        object_position = np.array(self.ee_target_pose)
+        object_orientation = np.array([0, 0, 0, 1])
+        
+        frame = self.camera.get_frame()
+        if frame is not None:
+            plate_pos, ball_pos, _ = analyze_frame(frame)
+        else:
+            plate_pos, ball_pos = [0, 0], [0, 0]
+        print(plate_pos, ball_pos)
+        
+        
+        ball_relative_pos = np.array(plate_pos) - np.array(ball_pos)
+        return {
+            'object_position': object_position,
+            'object_orientation': object_orientation,
+            'state': np.concatenate((self.ee_pos, self.ee_quat, ball_relative_pos)),
+        }
+        
+    def _get_target_pose(self) -> np.ndarray:
+        workspace_pose = bullet.get_random_workspace_pose(self.ee_pos_low, self.ee_pos_high, self.arm_min_radius)
+        return workspace_pose
 
 if __name__ == "__main__":
     env = roboverse.make('Widow250BallBalancing-v0',

@@ -74,7 +74,7 @@ def analyze_frame(frame, draw=False):
                     plate_center_pos = rect_center_pos
                     ball_center_pos = (int(cX + x), int(cY + y))
                     break
-        return plate_center_pos, ball_center_pos, new_frame
+    return plate_center_pos, ball_center_pos, new_frame
 
 
 if __name__ == "__main__":
