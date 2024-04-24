@@ -318,21 +318,20 @@ class Widow250BalanceROS(Widow250EnvROS):
     #     self.debug_sphere_id = object_utils.create_debug_sphere(self.ee_target_pose, self.ee_distance_threshold)
 
     #     bullet.step_simulation(self.num_sim_steps)
-    def get_plate_ball_pos(self):
+    def get_relative_pos(self):
         frame = self.camera.get_frame()
         if frame is not None:
-            plate_pos, ball_pos, _ = analyze_frame(frame)
-        if frame is None or plate_pos is None or ball_pos is None:
-            plate_pos, ball_pos = [0, 0], [0, 0]
-        return plate_pos, ball_pos
+            relative_pos, _ = analyze_frame(frame)
+        if frame is None or relative_pos is None:
+            relative_pos = [0, 0]
+        return relative_pos
 
     def get_info(self):
         info = super().get_info()
 
         # Balance info
-        info['ball_pos'], info['plate_pos'] = self.get_plate_ball_pos()
-        info['distance_from_center'] = object_utils.get_distance_from_center(
-            info['ball_pos'], info['plate_pos'], self.cfg['center_radius']) / 100 #TODO
+        info['relative_pos'] = self.get_relative_pos()
+        info['distance_from_center'] = np.sqrt(info['relative_pos'][0] ** 2 + info['relative_pos'][1] ** 2)
         # info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
         # info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
         # ----------------
@@ -343,7 +342,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         if not info:
             info = self.get_info()
         reward = 0
-        if info['ball_pos'] == [0, 0]:
+        if info['relative_pos'][0] == 0 and info['relative_pos'][1] == 0:
             return 0
         distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
         duration_reward = self.duration * self.cfg['duration_weight']
@@ -385,7 +384,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         print("Reward", reward)
         if reward == 0:
             self.nb_none_ball += 1
-            if self.nb_none_ball > 2:
+            if self.nb_none_ball > 5:
                 truncated = True
         else:
             self.nb_none_ball = 0
@@ -419,10 +418,8 @@ class Widow250BalanceROS(Widow250EnvROS):
         object_position = np.array(self.ee_target_pose)
         object_orientation = np.array([0, 0, 0, 1])
         
-        plate_pos, ball_pos = self.get_plate_ball_pos()
+        ball_relative_pos = self.get_relative_pos()
         
-        
-        ball_relative_pos = (np.array(plate_pos) - np.array(ball_pos)) / 100 # TODO: check if this is correct + config it
         return np.concatenate((self.ee_pos, self.ee_quat, ball_relative_pos))
         
     def _get_target_pose(self) -> np.ndarray:
