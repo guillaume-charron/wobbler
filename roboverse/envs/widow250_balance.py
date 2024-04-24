@@ -331,9 +331,8 @@ class Widow250BalanceROS(Widow250EnvROS):
 
         # Balance info
         info['ball_pos'], info['plate_pos'] = self.get_plate_ball_pos()
-        print(info['ball_pos'], info['plate_pos'])
         info['distance_from_center'] = object_utils.get_distance_from_center(
-            info['ball_pos'], info['plate_pos'], self.cfg['center_radius'])
+            info['ball_pos'], info['plate_pos'], self.cfg['center_radius']) / 2000 #TODO
         # info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
         # info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
         # ----------------
@@ -344,29 +343,26 @@ class Widow250BalanceROS(Widow250EnvROS):
         if not info:
             info = self.get_info()
         reward = 0
-        if self.reward_type == "balance":
-            if info['ball_pos'] == [0, 0]:
-                return 0
-            distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
-            duration_reward = self.duration * self.cfg['duration_weight']
-            # height_reward = -info['height_distance'] * self.cfg['height_weight']
-            # tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
-            
-            reward += distance_reward + duration_reward
-            
-            if self.cfg["gcrl"]:
-                g_w = self.cfg['goal_reached_weight']
-                d_w = self.cfg['distance_goal_weight']
+        if info['ball_pos'] == [0, 0]:
+            return 0
+        distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
+        duration_reward = self.duration * self.cfg['duration_weight']
+        # height_reward = -info['height_distance'] * self.cfg['height_weight']
+        # tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
+        
+        reward += distance_reward + duration_reward
+        
+        if self.cfg["gcrl"]:
+            g_w = self.cfg['goal_reached_weight']
+            d_w = self.cfg['distance_goal_weight']
 
-                reward += np.exp(-d_w * info['euclidean_distance'])
+            reward += np.exp(-d_w * info['euclidean_distance'])
 
-                if info['ee_pose_success']:
-                    reward = g_w * 1
-                    self.done = True
-      
-            return reward
-        else:
-            return super().get_reward(info)
+            if info['ee_pose_success']:
+                reward = g_w * 1
+                self.done = True
+    
+        return reward
         
     def reset(self, target=None, seed=None, options=None):
         obs, info = super().reset()
@@ -386,9 +382,10 @@ class Widow250BalanceROS(Widow250EnvROS):
         obs, reward, done, truncated, info = super().step(action)
 
         reward = self.get_reward(info)
+        print("Reward", reward)
         if reward == 0:
             self.nb_none_ball += 1
-            if self.nb_none_ball > 5:
+            if self.nb_none_ball > 2:
                 truncated = True
         else:
             self.nb_none_ball = 0
@@ -423,10 +420,9 @@ class Widow250BalanceROS(Widow250EnvROS):
         object_orientation = np.array([0, 0, 0, 1])
         
         plate_pos, ball_pos = self.get_plate_ball_pos()
-        print(plate_pos, ball_pos)
         
         
-        ball_relative_pos = (np.array(plate_pos) - np.array(ball_pos)) / 1000 # TODO: check if this is correct + config it
+        ball_relative_pos = (np.array(plate_pos) - np.array(ball_pos)) / 2000 # TODO: check if this is correct + config it
         return np.concatenate((self.ee_pos, self.ee_quat, ball_relative_pos))
         
     def _get_target_pose(self) -> np.ndarray:
@@ -459,7 +455,7 @@ if __name__ == "__main__":
     import time
     camera = Camera()
     env = Widow250BalanceROS(camera=camera, cfg=conf, rs_address='192.168.1.101:50051')
-    STATE = [0., 0., 0., 0, 0., 0., 0., 0., 0.]
+    STATE = [0.001, 0., 0., 0, 0., 0., 0., 0., 0.]
     env.reset()
     env.step(np.asarray(STATE))
     time.sleep(0.1)

@@ -11,7 +11,7 @@ from numpy import ndarray, dtype
 import roboverse.bullet as bullet
 from robo_gym.envs.simulation_wrapper import Simulation
 
-RESET_JOINT_VALUES = [0.0757, -0.0574, 0.0122, -1.55, 0.0058, -0.00076, 0., 0.036, -0.036]
+RESET_JOINT_VALUES = [0.0757, -0.0474, -0.0522, -1.55, 0.0058, -0.00076, 0., 0.036, -0.036]
 
 RESET_JOINT_VALUES_GRIPPER_CLOSED = [1.57, -0.6, -0.6, 0, -1.57, 0., 0., 0.015, -0.015]
 RESET_JOINT_INDICES = [0, 1, 2, 3, 4, 5, 7, 10, 11]

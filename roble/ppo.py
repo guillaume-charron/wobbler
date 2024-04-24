@@ -325,17 +325,17 @@ def run_ppo_policy(args, PATH):
     start_time = time.time()
     next_obs, _ = env.reset(seed=seed)
     next_obs = torch.tensor(next_obs, dtype=torch.float32).to(device)
-    print(next_obs)
     done = False
     while not done:
         with torch.no_grad():
             action = agent.get_action(next_obs.unsqueeze(0))
-            print("Feeding action", action)
+            print("Feeding action", action[0])
         next_obs, reward, termination, truncation, infos = env.step(action[0].cpu().numpy())
         next_obs = torch.tensor(next_obs, dtype=torch.float32).to(device)
         print(infos)
         done = termination or truncation
-        time.sleep(0.3)
+        # time.sleep(1)
+    env.reset()
     end_time = time.time()
     print(f"Time taken to run policy: {end_time - start_time} seconds")
 
