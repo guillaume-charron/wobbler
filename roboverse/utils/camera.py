@@ -20,7 +20,7 @@ class Camera(object):
         # Initialize VideoWriter
         self.video_writer = None
         self.is_recording = False
-        self.output_filename = f'{PATH}/output.mp4'
+        self.output_filename = f'{PATH}/camera.mp4'
         self.fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         
         # Start frame retrieval thread

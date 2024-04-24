@@ -78,12 +78,15 @@ def analyze_frame(frame, draw=False):
     if ball_center_pos is not None:
         relative_pos = np.array(plate_center_pos) - np.array(ball_center_pos)
         relative_pos = relative_pos / np.maximum(rect_bbox[0], rect_bbox[1]) * 0.2
+        # relative_pos[1] = -relative_pos[1]
+        # relative_pos[0] = -relative_pos[0]
+        
         return relative_pos, new_frame
     return None, new_frame
 
 
 if __name__ == "__main__":
-    cam = Camera(0, cam_width, cam_height, cam_fps)
+    cam = Camera("", 0, cam_width, cam_height, cam_fps)
     while True:
         frame = cam.get_frame()
         if frame is not None:

@@ -314,14 +314,9 @@ def run_ppo_policy(args, PATH):
     
     model_path = args.meta.from_pretrained
     print("Loading the pretrained agent from ", model_path)
-    # try:
-        # try finding model
     print(os.path.exists(model_path))
     agent.load_state_dict(torch.load(model_path))
     print("Successfully loaded the pretrained agent from", model_path)
-    # except:
-    #     print("Could not load the pretrained agent, exiting")
-    #     return
     
     start_time = time.time()
     next_obs, _ = env.reset(seed=seed)
@@ -335,7 +330,8 @@ def run_ppo_policy(args, PATH):
         next_obs = torch.tensor(next_obs, dtype=torch.float32).to(device)
         print(infos)
         done = termination or truncation
-        # time.sleep(1)
+        # time.sleep(0.1)
+        print()
     env.reset()
     end_time = time.time()
     print(f"Time taken to run policy: {end_time - start_time} seconds")

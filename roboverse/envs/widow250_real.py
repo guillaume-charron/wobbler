@@ -12,6 +12,10 @@ import roboverse.bullet as bullet
 from robo_gym.envs.simulation_wrapper import Simulation
 
 RESET_JOINT_VALUES = [0.0757, -0.0474, -0.0522, -1.55, 0.0058, -0.00076, 0., 0.036, -0.036]
+# RESET_JOINT_VALUES = [0.0757, -0.0474, -0.0650, -0.00011, -0.0558, -1.540, 0., 0.036, -0.036]
+# RESET_JOINT_VALUES = [1.5691, -1.8039, -0.8089, 0.0055, -1.0515, -1.5852, 2.4914, 0.036, -0.036]
+RESET_JOINT_VALUES = [1.5691, -0.8474, 0.19, 0.0055, .5515, -1.54, 2.4914, 0.036, -0.036]
+
 
 RESET_JOINT_VALUES_GRIPPER_CLOSED = [1.57, -0.6, -0.6, 0, -1.57, 0., 0., 0.015, -0.015]
 RESET_JOINT_INDICES = [0, 1, 2, 3, 4, 5, 7, 10, 11]
@@ -35,7 +39,7 @@ class Widow250EnvROS(gym.Env):
     real_robot = False
 
     def __init__(self, observation_mode='state', observation_img_dim=48,
-                 reward_type='ee_position', xyz_action_scale=0.2,
+                 reward_type='ee_position', xyz_action_scale=0.2, abc_action_scale=-0.01,
                  ee_pos_low=(0, -0.3, 0.06), ee_pos_high=(0.6, 0.3, 0.50), gui=False, rs_address=None,
                  ee_distance_threshold=0.1, robot_model='wx250s'):
 
@@ -57,6 +61,7 @@ class Widow250EnvROS(gym.Env):
         self.reset_joint_indices = RESET_JOINT_INDICES
 
         self.xyz_action_scale = xyz_action_scale
+        self.abc_action_scale = abc_action_scale
 
         self._set_action_space()
         self._set_observation_space()
@@ -111,23 +116,25 @@ class Widow250EnvROS(gym.Env):
         action = np.clip(action, -1, +1)  # TODO Clean this up
 
         xyz_action = action[:3]  # ee position actions
-        orientation_action = action[3:6]
+        abc_action = action[3:6]
+        # np.array([0.0003, 0.0003, 0.0003])
 
-        # ee pose from robot
-        if self.previous_position is not None:
-            prev_position = self.previous_position
-        else:
-            prev_position = self.ee_pos
+        # Get Robot Server state
+        rs_state = self.robogym.client.get_state_msg().state_dict
 
-        scale_move = self.xyz_action_scale * xyz_action
-        target_ee_position = prev_position + scale_move
-        target_ee_pos_clipped = np.clip(target_ee_position, self.ee_pos_low,
-                                        self.ee_pos_high)
-        self.previous_position = target_ee_pos_clipped
-        target_ee_pose = np.append(target_ee_pos_clipped, orientation_action)
+        # Check if the length and keys of the Robot Server state received is correct
+        self.robogym.check_rs_state_keys(rs_state, self.ee_target_pose)
+
+        # Convert the initial state from Robot Server format to environment format
+        ee_pos, ee_rot = self.robogym.robot_server_state_to_env_state(rs_state)
+
+        target_ee_pos = ee_pos + self.xyz_action_scale * xyz_action
+        target_ee_deg = ee_rot + self.abc_action_scale * abc_action
+
+        target_ee_pose = np.append(target_ee_pos, target_ee_deg)
 
         target_joints, solution_found = self.robogym.interbotix_utils.inverse_kinematics(target_ee_pose, custom_guess=self.robogym.joint_positions)
-
+        
         check_inv_kin = self.robogym.interbotix_utils.forward_kinematics(target_joints)
         check_again = self.robogym.interbotix_utils.forward_kinematics(self.robogym.joint_positions)
 
@@ -286,8 +293,8 @@ if __name__ == "__main__":
     # env = Widow250EnvRosASim(gui=True, ip='127.0.0.1', robot_model='wx250s')
     import time
     env = Widow250EnvROSARob(rs_address='192.168.1.101:50051')
-    STATE = [0., 0., 0., 0, 0., 0., 0., 0., 0.]
+    # STATE = [0., 0., 0., 0, 0., 0., 0., 0., 0.]
     env.reset()
-    env.step(np.asarray(STATE))
+    # env.step(np.asarray(STATE))
     time.sleep(0.1)
-    env.reset()
+    # env.reset()

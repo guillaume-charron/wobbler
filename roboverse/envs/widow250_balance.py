@@ -384,7 +384,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         print("Reward", reward)
         if reward == 0:
             self.nb_none_ball += 1
-            if self.nb_none_ball > 5:
+            if self.nb_none_ball > 10:
                 truncated = True
         else:
             self.nb_none_ball = 0
@@ -450,10 +450,10 @@ if __name__ == "__main__":
         
     }
     import time
-    camera = Camera()
+    camera = Camera("")
     env = Widow250BalanceROS(camera=camera, cfg=conf, rs_address='192.168.1.101:50051')
-    STATE = [0.001, 0., 0., 0, 0., 0., 0., 0., 0.]
+    # STATE = [0.001, 0., 0., 0, 0., 0., 0., 0., 0.]
     env.reset()
-    env.step(np.asarray(STATE))
+    # env.step(np.asarray(STATE))
     time.sleep(0.1)
-    env.reset()
+    # env.reset()
