@@ -121,13 +121,14 @@ def train(args, logger, PATH):
         return LOG_dico
 
     LOG_dico = init_log_dico()
+    print(args.num_iterations)
     for iteration in range(1, args.num_iterations + 1):
         if len(LOG_dico) > 0 and len(LOG_dico["train_returns"]) > 0:
             LOG_dico["TimeSinceStart"] = time.time() - start_time
             LOG_dico["VectorizedStep"] = global_step
             LOG_dico["GlobalStep"] = global_step
             LOG_dico["SingleStep"] = SINGLE_global_step
-
+            print("YES LOGGING")
             logger.log_dict(LOG_dico)
             LOG_dico = init_log_dico()
 
@@ -142,7 +143,6 @@ def train(args, logger, PATH):
             SINGLE_global_step += 1
             obs[step] = next_obs
             dones[step] = next_done
-
             # if SINGLE_global_step > 1 and ((SINGLE_global_step % (args.eval_frequency // args.num_envs)) == 0):
             #    mean_eval_returns, mean_eval_len = evaluate(agent=agent, make_env=make_vector_env,
             #                                                video_save_path=f"runs/{args.run_name}/videos/global_step_{global_step}",
