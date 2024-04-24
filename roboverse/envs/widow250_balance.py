@@ -332,7 +332,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         # Balance info
         info['ball_pos'], info['plate_pos'] = self.get_plate_ball_pos()
         info['distance_from_center'] = object_utils.get_distance_from_center(
-            info['ball_pos'], info['plate_pos'], self.cfg['center_radius']) / 2000 #TODO
+            info['ball_pos'], info['plate_pos'], self.cfg['center_radius']) / 100 #TODO
         # info['height_distance'] = np.abs(info['ball_pos'][2] - info['plate_pos'][2])
         # info['plate_angle'] = p.getEulerFromQuaternion(plate_quat)[0] # X angle -> plate tilt angle
         # ----------------
@@ -422,7 +422,7 @@ class Widow250BalanceROS(Widow250EnvROS):
         plate_pos, ball_pos = self.get_plate_ball_pos()
         
         
-        ball_relative_pos = (np.array(plate_pos) - np.array(ball_pos)) / 2000 # TODO: check if this is correct + config it
+        ball_relative_pos = (np.array(plate_pos) - np.array(ball_pos)) / 100 # TODO: check if this is correct + config it
         return np.concatenate((self.ee_pos, self.ee_quat, ball_relative_pos))
         
     def _get_target_pose(self) -> np.ndarray:
