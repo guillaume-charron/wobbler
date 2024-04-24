@@ -302,7 +302,7 @@ def run_ppo_policy(args, PATH):
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = args.meta.torch_deterministic
     
-    camera = Camera()
+    camera = Camera(PATH)
     env = Widow250BalanceROS(camera=camera, cfg=args.environment, rs_address=args.meta.ros_adress)
     if args.sim2real.history_len > 1:
         env = HistoryWrapper(env, length=args.sim2real.history_len)
