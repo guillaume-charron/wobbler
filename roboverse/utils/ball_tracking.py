@@ -3,7 +3,7 @@ import cv2
 import imutils
 import numpy as np
 cam_width, cam_height = 1920, 1080
-cam_src = 1
+cam_src = 0
 cam_fps = 30
 
 def analyze_frame(frame, draw=False):
@@ -87,6 +87,12 @@ def analyze_frame(frame, draw=False):
 
 if __name__ == "__main__":
     cam = Camera("", 0, cam_width, cam_height, cam_fps)
+    output_filename = f'ball_tracking.mp4'
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_writer = cv2.VideoWriter(output_filename, fourcc, 30,
+                                            (int(cam.capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                                             int(cam.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+
     while True:
         frame = cam.get_frame()
         if frame is not None:
@@ -96,6 +102,7 @@ if __name__ == "__main__":
                 print(np.sqrt(relative_pos[0] ** 2 + relative_pos[1] ** 2))
             new_frame = cv2.resize(new_frame, (600, 400))
             cv2.imshow('frame', new_frame)
+            video_writer.write(new_frame)
             #cv2.imwrite('frame_green.jpg', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
