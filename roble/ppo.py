@@ -303,6 +303,7 @@ def run_ppo_policy(args, PATH):
     torch.backends.cudnn.deterministic = args.meta.torch_deterministic
     
     camera = Camera(PATH)
+    camera.start_recording()
     env = Widow250BalanceROS(camera=camera, cfg=args.environment, rs_address=args.meta.ros_adress)
     if args.sim2real.history_len > 1:
         env = HistoryWrapper(env, length=args.sim2real.history_len)
@@ -338,6 +339,7 @@ def run_ppo_policy(args, PATH):
     env.reset()
     end_time = time.time()
     print(f"Time taken to run policy: {end_time - start_time} seconds")
+    camera.stop_recording()
 
 @hydra.main(config_path="config", config_name="conf")
 def main(args):
