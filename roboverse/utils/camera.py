@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 class Camera(object):
-    def __init__(self, src=0, width=1920, height=1080, fps=30):
+    def __init__(self, PATH, src=0, width=1920, height=1080, fps=30):
         self.capture = cv2.VideoCapture(src, apiPreference=cv2.CAP_AVFOUNDATION)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -16,6 +16,12 @@ class Camera(object):
         self.fps = fps
         self.SECONDS_PER_IMAGE = 1/fps
         self.WAIT_MS = int(self.SECONDS_PER_IMAGE * 1000)
+        
+        # Initialize VideoWriter
+        self.video_writer = None
+        self.is_recording = False
+        self.output_filename = f'{PATH}/camera/output.mp4'
+        self.fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         
         # Start frame retrieval thread
         self.thread_active = True
@@ -36,6 +42,8 @@ class Camera(object):
         while self.thread_active:
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
+                if self.is_recording:
+                    self.video_writer.write(self.frame)
                 self.isNewFrame = True
             time.sleep(self.SECONDS_PER_IMAGE)
     
@@ -78,11 +86,32 @@ class Camera(object):
             x, y, w, h = roi
             dst = dst[y:y+h, x:x+w]
             return dst
-    
+        
+    def start_recording(self, filename=None):
+        """
+        Start recording the video
+        """
+        if filename:
+            self.output_filename = filename
+        self.video_writer = cv2.VideoWriter(self.output_filename, self.fourcc, self.fps,
+                                            (int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                                             int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+        self.is_recording = True
+
+    def stop_recording(self):
+        """
+        Stop recording the video
+        """
+        self.is_recording = False
+        if self.video_writer:
+            self.video_writer.release()
+            self.video_writer = None
+
     def stop_cam(self):
         """
         Stops the camera
         """
+        self.stop_recording()
         self.thread_active = False
         self.capture.release()
         cv2.destroyAllWindows()

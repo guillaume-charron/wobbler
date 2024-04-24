@@ -1,5 +1,5 @@
 numpy==1.21.4
-gym==0.26.1
+gym==0.17.3
 gym-notices==0.0.8
 free-mujoco-py==2.1.6
 pybullet==3.2.6
