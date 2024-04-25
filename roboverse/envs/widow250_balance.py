@@ -228,11 +228,14 @@ class Widow250BalanceEnv(Widow250Env):
         ball_pos = self.get_ball_pos()
         plate_pos, _ = self.get_plate_pos_quat()
         ball_relative_pos = np.array(plate_pos)[:2] - np.array(ball_pos)[:2]
-        target_coord = np.array(self.ee_target_pose)
+        if self.cfg["gcrl"]:
+            state = np.concatenate((ee_pos, ee_quat, ball_relative_pos, np.array(self.ee_target_pose)))
+        else:
+            state = np.concatenate((ee_pos, ee_quat, ball_relative_pos))
         return {
             'object_position': object_position,
             'object_orientation': object_orientation,
-            'state': np.concatenate((ee_pos, ee_quat, ball_relative_pos, target_coord)),
+            'state': state,
         }
         
     def _get_target_pose(self) -> np.ndarray:

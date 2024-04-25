@@ -67,7 +67,7 @@ sim2real:
 environment:
   randomize_every_step: true
   randomize_ball_drop: true
-  gcrl: True
+  gcrl: False
   ee_distance_threshold: 0.05
   ball_size: 
     min: 0.4

@@ -127,7 +127,7 @@ def train(args, logger, PATH):
             LOG_dico["VectorizedStep"] = global_step
             LOG_dico["GlobalStep"] = global_step
             LOG_dico["SingleStep"] = SINGLE_global_step
-            
+
             logger.log_dict(LOG_dico)
             LOG_dico = init_log_dico()
 
