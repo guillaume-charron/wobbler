@@ -17,15 +17,15 @@ meta:
 
 # Algorithm specific arguments
 ppo:
-  num_envs: 128
+  num_envs: 32
   eval_frequency: 200_000
-  total_timesteps: 10_000_000   # total timesteps of the experiments
+  total_timesteps: 1_000_000   # total timesteps of the experiments
   learning_rate: 3e-4   # the learning rate of the optimizer 
-  num_steps: 8192   # the number of steps to run in each environment per policy rollout
+  num_steps: 2048   # the number of steps to run in each environment per policy rollout
   anneal_lr: True   # Toggle learning rate annealing for policy and value networks 
   gamma: 0.99   # the discount factor gamma 
   gae_lambda: 0.95   # the lambda for the general advantage estimation 
-  num_minibatches: 128   # the number of mini-batches 
+  num_minibatches: 32   # the number of mini-batches 
   update_epochs: 10   # the K epochs to update the policy 
   norm_adv: True   # Toggles advantages normalization 
   clip_coef: 0.2   # the surrogate clipping coefficient 
@@ -86,7 +86,7 @@ environment:
   plate_lateral_friction: 
     reset: [0.1, 0.6]
     step: [0.17, 0.22]
-  center_radius: 0.005
+  center_radius: 0.01
   distance_center_weight: 0.6
   duration_weight: 0.3
   height_weight: 0
