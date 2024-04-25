@@ -10,18 +10,18 @@ meta:
   env_id: "Widow250BallBalancing-v0"   # the id of the environment
   timelimit: 200
   sac_instead: False
-  randomize_after_steps: 10_000_000
+  randomize_after_steps: 7_500_000
   save_every: 1_000_000
   add_to_runname: "wobble"
   from_pretrained: False
 
 # Algorithm specific arguments
 ppo:
-  num_envs: 64
+  num_envs: 8
   eval_frequency: 200_000
-  total_timesteps: 25_000_000   # total timesteps of the experiments
+  total_timesteps: 10_000_000   # total timesteps of the experiments
   learning_rate: 3e-4   # the learning rate of the optimizer 
-  num_steps: 4096   # the number of steps to run in each environment per policy rollout
+  num_steps: 2048   # the number of steps to run in each environment per policy rollout
   anneal_lr: True   # Toggle learning rate annealing for policy and value networks 
   gamma: 0.99   # the discount factor gamma 
   gae_lambda: 0.95   # the lambda for the general advantage estimation 
@@ -87,10 +87,10 @@ environment:
     reset: [0.1, 0.6]
     step: [0.17, 0.22]
   center_radius: 0.01
-  distance_center_weight: 0.8
-  duration_weight: 0.3
-  height_weight: 0.1
-  tilt_weight: 0.25
+  distance_center_weight: 1
+  duration_weight: 0.2
+  height_weight: 0.2
+  tilt_weight: 0.2
   # GCRL:
-  distance_goal_weight: 0.6 # Reward weight according to the distance to the goal
-  goal_reached_weight: 3 # Reward when the goal is reached
+  distance_goal_weight: 0.5 # Reward weight according to the distance to the goal
+  goal_reached_weight: 2 # Reward when the goal is reached
