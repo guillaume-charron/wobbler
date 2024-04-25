@@ -225,11 +225,16 @@ class Widow250BalanceEnv(Widow250Env):
     def get_observation(self):
         ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
         object_position, object_orientation = bullet.get_object_position(self.objects[self.target_object])
+        
         ball_pos = self.get_ball_pos()
         plate_pos, _ = self.get_plate_pos_quat()
+        gripper_pos, _ = bullet.get_link_state(self.robot_id, self.end_effector_index)
+        
         ball_relative_pos = np.array(plate_pos)[:2] - np.array(ball_pos)[:2]
+        target_relative_pos = np.array(gripper_pos) - np.array(self.ee_target_pose)
+        
         if self.cfg["gcrl"]:
-            state = np.concatenate((ee_pos, ee_quat, ball_relative_pos, np.array(self.ee_target_pose)))
+            state = np.concatenate((ee_pos, ee_quat, ball_relative_pos, target_relative_pos))
         else:
             state = np.concatenate((ee_pos, ee_quat, ball_relative_pos))
         return {
