@@ -26,3 +26,4 @@ wheel
 gin-config
 stable-baselines3
 modern_robotics
+gymnasium
