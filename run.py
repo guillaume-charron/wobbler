@@ -76,7 +76,9 @@ def my_main(args: DictConfig):
         return args
 
     sim2real = args.sim2real
+    env_args = args.environment
     new_args = flatten_conf(args.meta, OmegaConf.create({"sim2real": get_arg_dict(sim2real)}))
+    new_args = flatten_conf(new_args, OmegaConf.create({"environment": get_arg_dict(env_args)}))
     if args.meta.sac_instead:
         args = flatten_conf(new_args, args.sac)
 

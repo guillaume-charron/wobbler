@@ -80,11 +80,11 @@ def train(args, logger, PATH):
     sim2real_wrap = make_thunk(args.sim2real)
     make_vector_env = functools.partial(balancegym.make_vector_env, sim2real_wrap=sim2real_wrap,
                                         timelimit=args.timelimit, num_vector=args.num_envs)
-    envs = make_vector_env(args.seed, True, f"{PATH}/videos")
+    envs = make_vector_env(args, True, f"{PATH}/videos")
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-
+    
     # Load pretrained model
     if args.from_pretrained:
         try:

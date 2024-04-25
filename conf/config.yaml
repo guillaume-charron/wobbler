@@ -65,8 +65,8 @@ sim2real:
   max_action_repeat_on_reset: 8
 
 environment:
-  randomize_every_step: true
-  randomize_ball_drop: true
+  randomize_every_step: True
+  randomize_ball_drop: True
   gcrl: True
   ee_distance_threshold: 0.05
   ball_size: 

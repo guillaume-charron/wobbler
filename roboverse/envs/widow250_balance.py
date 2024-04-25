@@ -128,13 +128,14 @@ class Widow250BalanceEnv(Widow250Env):
         # ----------------
         
         # GCRL info
-        ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
-        target_coord = np.array(self.ee_target_pose)
-        ee_coord = np.array(ee_pos)
-        euclidean_dist_3d = np.linalg.norm(target_coord - ee_coord)
-        info['ee_pose_success'] = euclidean_dist_3d <= self.ee_distance_threshold
-        info['euclidean_distance'] = euclidean_dist_3d
-        info['target_coord'] = self.ee_target_pose
+        if self.cfg["gcrl"]:
+            ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
+            target_coord = np.array(self.ee_target_pose)
+            ee_coord = np.array(ee_pos)
+            euclidean_dist_3d = np.linalg.norm(target_coord - ee_coord)
+            info['ee_pose_success'] = euclidean_dist_3d <= self.ee_distance_threshold
+            info['euclidean_distance'] = euclidean_dist_3d
+            info['target_coord'] = self.ee_target_pose
         # ----------------
         
         return info
