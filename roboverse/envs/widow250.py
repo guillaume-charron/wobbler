@@ -74,9 +74,9 @@ class Widow250Env(gym.Env, Serializable):
 
                  gui=False,
                  in_vr_replay=False,
-                 is_gripper_open=True,
                  ):
 
+        super().__init__()
         self.control_mode = control_mode
         self.observation_mode = observation_mode
         self.observation_img_dim = observation_img_dim
@@ -94,7 +94,10 @@ class Widow250Env(gym.Env, Serializable):
         self.use_neutral_action = use_neutral_action
         self.neutral_gripper_open = neutral_gripper_open
 
+        self.base_position = [0.6, 0, -0.4]
+
         self.gui = gui
+        self.done = False
 
         # TODO(avi): This hard-coding should be removed
         self.fc_input_key = 'state'
@@ -155,14 +158,13 @@ class Widow250Env(gym.Env, Serializable):
         self._set_action_space()
         self._set_observation_space()
 
-        self.default_gripper_state = is_gripper_open
-        self.is_gripper_open = self.default_gripper_state  # TODO(avi): Clean this up
+        self.is_gripper_open = True  # TODO(avi): Clean this up
 
         self.reset()
         self.ee_pos_init, self.ee_quat_init = bullet.get_link_state(
             self.robot_id, self.end_effector_index)
 
-    def _load_meshes(self):
+    def _load_meshes(self, target_position=None):
         self.table_id = objects.table()
         self.robot_id = objects.widow250()
 
@@ -180,11 +182,18 @@ class Widow250Env(gym.Env, Serializable):
             self.original_object_positions = object_positions
         for object_name, object_position in zip(self.object_names,
                                                 object_positions):
-            self.objects[object_name] = object_utils.load_object(
-                object_name,
-                object_position,
-                object_quat=self.object_orientations[object_name],
-                scale=self.object_scales[object_name])
+            if object_name == self.target_object and self.reward_type == 'ee_position':
+                if target_position:
+                    object_position = target_position
+                else:
+                    object_position = [0, 0, 0]
+                self.objects[object_name] = object_utils.create_debug_sphere(object_position)
+            else:
+                self.objects[object_name] = object_utils.load_object(
+                    object_name,
+                    object_position,
+                    object_quat=self.object_orientations[object_name],
+                    scale=self.object_scales[object_name])
             bullet.step_simulation(self.num_sim_steps_reset)
 
     def reset(self, target=None, seed=None, options=None):
@@ -195,7 +204,7 @@ class Widow250Env(gym.Env, Serializable):
             self.robot_id,
             self.reset_joint_indices,
             self.reset_joint_values)
-        self.is_gripper_open = self.default_gripper_state 
+        self.is_gripper_open = True  # TODO(avi): Clean this up
 
         return self.get_observation(), self.get_info()
 
@@ -211,8 +220,7 @@ class Widow250Env(gym.Env, Serializable):
         xyz_action = action[:3]  # ee position actions
         abc_action = action[3:6]  # ee orientation actions
         gripper_action = action[6]
-        #neutral_action = action[7]
-        neutral_action = 0
+        neutral_action = action[7]
 
         ee_pos, ee_quat = bullet.get_link_state(
             self.robot_id, self.end_effector_index)
@@ -248,6 +256,9 @@ class Widow250Env(gym.Env, Serializable):
                 else:
                     target_gripper_state = GRIPPER_CLOSED_STATE
                 # target_gripper_state = gripper_state
+        elif self.control_mode == 'no_gripper':
+            num_sim_steps = self.num_sim_steps
+            target_gripper_state = GRIPPER_OPEN_STATE
         else:
             raise NotImplementedError
 
@@ -280,7 +291,7 @@ class Widow250Env(gym.Env, Serializable):
 
         info = self.get_info()
         reward = self.get_reward(info)
-        done = False
+        done = self.done
         truncated = False
         return self.get_observation(), reward, done, truncated, info
 
@@ -365,8 +376,8 @@ class Widow250Env(gym.Env, Serializable):
             obs_bound = 100
             obs_high = np.ones(robot_state_dim) * obs_bound
             state_space = gym.spaces.Box(-obs_high, obs_high)
-            object_position = gym.spaces.Box(np.asarray([-1]), np.asarray([1]))
-            object_orientation = gym.spaces.Box(np.asarray([-1]), np.asarray([1]))
+            object_position = gym.spaces.Box(-np.ones(3), np.ones(3))
+            object_orientation = gym.spaces.Box(-np.ones(4), np.ones(4))
             spaces = {'image': img_space, 'state': state_space, 'object_position': object_position,
                       'object_orientation': object_orientation}
             self.observation_space = gym.spaces.Dict(spaces)
@@ -380,6 +391,7 @@ class Widow250Env(gym.Env, Serializable):
             spaces = {'state': state_space, 'object_position': object_position,
                       'object_orientation': object_orientation}
             self.observation_space = gym.spaces.Dict(spaces)
+
         else:
             robot_state_dim = 10  # XYZ + QUAT + GRIPPER_STATE
             obs_bound = 100

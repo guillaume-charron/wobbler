@@ -75,9 +75,7 @@ def train(args, logger, PATH):
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    if device.type == "cuda":
-        torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        
+
     # env setup
     sim2real_wrap = make_thunk(args.sim2real)
     make_vector_env = functools.partial(balancegym.make_vector_env, sim2real_wrap=sim2real_wrap,
@@ -95,15 +93,15 @@ def train(args, logger, PATH):
         except:
             print("Could not load the pretrained agent, continuing with a new agent")
 
-    optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
+    optimizer = optim.AdamW(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape, device=device)
-    actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape, device=device)
-    logprobs = torch.zeros((args.num_steps, args.num_envs), device=device)
-    rewards = torch.zeros((args.num_steps, args.num_envs), device=device)
-    dones = torch.zeros((args.num_steps, args.num_envs), device=device)
-    values = torch.zeros((args.num_steps, args.num_envs), device=device)
+    obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
+    actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
+    logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
+    rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
+    dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
+    values = torch.zeros((args.num_steps, args.num_envs)).to(device)
 
     # TRY NOT TO MODIFY: start the game
     SINGLE_global_step = 0
@@ -111,9 +109,9 @@ def train(args, logger, PATH):
     randomization_updated = False # flag for envs
     start_time = time.time()
     next_obs, _ = envs.reset(seed=args.seed)
-    next_obs = torch.Tensor(next_obs, device=device)
-    next_done = torch.zeros(args.num_envs, device=device)
-
+    next_obs = torch.Tensor(next_obs).to(device)
+    next_done = torch.zeros(args.num_envs).to(device)
+    
     def init_log_dico():
         LOG_dico = {}
         LOG_dico["train_returns"] = []
@@ -144,7 +142,6 @@ def train(args, logger, PATH):
             SINGLE_global_step += 1
             obs[step] = next_obs
             dones[step] = next_done
-
             # if SINGLE_global_step > 1 and ((SINGLE_global_step % (args.eval_frequency // args.num_envs)) == 0):
             #    mean_eval_returns, mean_eval_len = evaluate(agent=agent, make_env=make_vector_env,
             #                                                video_save_path=f"runs/{args.run_name}/videos/global_step_{global_step}",
@@ -181,7 +178,7 @@ def train(args, logger, PATH):
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
-            advantages = torch.zeros_like(rewards, device=device)
+            advantages = torch.zeros_like(rewards).to(device)
             lastgaelam = 0
             for t in reversed(range(args.num_steps)):
                 if t == args.num_steps - 1:

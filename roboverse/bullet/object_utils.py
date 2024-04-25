@@ -4,8 +4,8 @@ import os
 import importlib.util
 import numpy as np
 from .control import get_object_position, get_link_state
-from roboverse.bullet.drawer_utils import *
-from roboverse.bullet.button_utils import *
+# from roboverse.bullet.drawer_utils import *
+# from roboverse.bullet.button_utils import *
 from roboverse.bullet.balance_utils import *
 
 CUR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -205,6 +205,12 @@ def load_bullet_object(object_name, **kwargs):
     object_specs.update(**kwargs)
     object_id = p.loadURDF(**object_specs)
     return object_id
+
+def create_debug_sphere(position, radius, color=(1, 0, 0, 0.4)):
+    target_visual_shape = p.createVisualShape(p.GEOM_SPHERE, radius=radius, rgbaColor=color)
+    sphere_id = p.createMultiBody(baseVisualShapeIndex=target_visual_shape,
+                                  basePosition=position)
+    return sphere_id
 
 
 # TODO(avi) Maybe move this to a different file
