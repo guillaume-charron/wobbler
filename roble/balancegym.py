@@ -18,8 +18,7 @@ def load_config():
     cfg = hydra.compose(config_name="config")
     return cfg
 
-def make_balance_task(seed):
-    cfg = load_config()
+def make_balance_task(cfg, seed):
     env_config = cfg.environment
     env = create_widow_env(observation_mode='state', cfg=env_config)
     env.seed(seed)
@@ -48,11 +47,11 @@ def make_balance_task(seed):
     return env
 
 
-def get_env_thunk(seed, sim2real_wrap, idx, capture_video, video_save_path, timelimit):
+def get_env_thunk(args, seed, sim2real_wrap, idx, capture_video, video_save_path, timelimit):
     def thunk():
         np.random.seed(seed)
 
-        env = make_balance_task(seed)
+        env = make_balance_task(args, seed)
             
         env = TimeLimit(env, timelimit)
 
@@ -75,10 +74,11 @@ def get_env_thunk(seed, sim2real_wrap, idx, capture_video, video_save_path, time
 def _identity(env):
     return env
 
-def make_vector_env(seed, capture_video, video_save_path, timelimit=1000, num_vector=10, sim2real_wrap=_identity):
+def make_vector_env(args, capture_video, video_save_path, timelimit=1000, num_vector=10, sim2real_wrap=_identity):
     envlist = []
+    seed = args.seed
     for i in range(num_vector):
-        envlist.append(get_env_thunk(seed + i, sim2real_wrap, i, capture_video, video_save_path, timelimit=timelimit))
+        envlist.append(get_env_thunk(args, seed + i, sim2real_wrap, i, capture_video, video_save_path, timelimit=timelimit))
     envs = gym.vector.AsyncVectorEnv(envlist)
     # envs = gym.vector.SyncVectorEnv(envlist) # Better for debugging
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"

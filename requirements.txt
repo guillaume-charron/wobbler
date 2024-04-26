@@ -26,6 +26,7 @@ setuptools
 wheel
 gin-config
 stable-baselines3
+modern_robotics
 gymnasium
 protobuf==3.20.*
 moviepy

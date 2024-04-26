@@ -131,18 +131,14 @@ class Widow250BalanceEnv(Widow250Env):
         # ----------------
         
         # GCRL info
-        ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
-        target_coord = np.array(self.ee_target_pose)
-        ee_coord = np.array(ee_pos)
-        euclidean_dist_3d = np.linalg.norm(target_coord - ee_coord)
-        if euclidean_dist_3d <= self.ee_distance_threshold:
-            info['ee_pose_success'] = True
+        if self.cfg["gcrl"]:
+            ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
+            target_coord = np.array(self.ee_target_pose)
+            ee_coord = np.array(ee_pos)
+            euclidean_dist_3d = np.linalg.norm(target_coord - ee_coord)
+            info['ee_pose_success'] = euclidean_dist_3d <= self.ee_distance_threshold
+            info['euclidean_distance'] = euclidean_dist_3d
             info['target_coord'] = self.ee_target_pose
-        else:
-            info['ee_pose_success'] = False
-
-        info['euclidean_distance'] = euclidean_dist_3d
-        info['target_coord'] = self.ee_target_pose
         # ----------------
         
         return info
@@ -157,28 +153,27 @@ class Widow250BalanceEnv(Widow250Env):
         if not info:
             info = self.get_info()
         reward = 0
-        if self.reward_type == "balance":
-            
-            distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
-            duration_reward = self.duration * self.cfg['duration_weight']
-            height_reward = -info['height_distance'] * self.cfg['height_weight']
-            tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
-            
-            reward += distance_reward + duration_reward + height_reward + tilt_reward
-            
-            if self.cfg["gcrl"]:
-                g_w = self.cfg['goal_reached_weight']
-                d_w = self.cfg['distance_goal_weight']
 
-                reward += np.exp(-d_w * info['euclidean_distance'])
+        distance_reward = -np.exp(info['distance_from_center']) * self.cfg['distance_center_weight']
+        duration_reward = self.duration * self.cfg['duration_weight']
+        height_reward = -info['height_distance'] * self.cfg['height_weight']
+        tilt_reward = -np.abs(info['plate_angle']) * self.cfg['tilt_weight']
+        
+        reward += distance_reward + duration_reward + height_reward + tilt_reward
+        
+        if self.cfg["gcrl"]:
+            g_w = self.cfg['goal_reached_weight']
+            d_w = self.cfg['distance_goal_weight']
 
-                if info['ee_pose_success']:
-                    reward = g_w * 1
-                    self.done = True
-      
-            return reward
-        else:
-            return super().get_reward(info)
+            target_distance_reward = -np.exp(info['euclidean_distance']) * d_w
+            reward += target_distance_reward
+
+            if info['ee_pose_success']:
+                reward += g_w * 1
+                self.done = True
+    
+        return reward
+
         
     def reset(self, target=None, seed=None, options=None):
         if target:
@@ -203,7 +198,7 @@ class Widow250BalanceEnv(Widow250Env):
 
     def step(self, action):
         
-        obs, reward, done, truncated, info = super().step(action)
+        obs, reward, _, truncated, info = super().step(action)
 
         if self.reward_type == "balance":
             reward = self.get_reward(info)
@@ -215,10 +210,13 @@ class Widow250BalanceEnv(Widow250Env):
         if self.cfg.get("randomize_every_step", False):
             self.randomize_ball('step')
         
-        return obs, reward, done, truncated, info   
+        return obs, reward, self.done, truncated, info   
 
     def _set_observation_space(self):
-        robot_state_dim = 9  # XYZ + QUAT + XY_BALL
+        if self.cfg["gcrl"]:
+            robot_state_dim = 12 # XYZ + QUAT + XY_BALL + XY_TARGET
+        else:
+            robot_state_dim = 9  # XYZ + QUAT + XY_BALL
         obs_bound = 100
         obs_high = np.ones(robot_state_dim) * obs_bound
         state_space = gym.spaces.Box(-obs_high, obs_high)
@@ -231,13 +229,22 @@ class Widow250BalanceEnv(Widow250Env):
     def get_observation(self):
         ee_pos, ee_quat = bullet.get_link_state(self.robot_id, self.end_effector_index)
         object_position, object_orientation = bullet.get_object_position(self.objects[self.target_object])
+        
         ball_pos = self.get_ball_pos()
         plate_pos, _ = self.get_plate_pos_quat()
+        gripper_pos, _ = bullet.get_link_state(self.robot_id, self.end_effector_index)
+        
         ball_relative_pos = np.array(plate_pos)[:2] - np.array(ball_pos)[:2]
+        target_relative_pos = np.array(gripper_pos) - np.array(self.ee_target_pose)
+        
+        if self.cfg["gcrl"]:
+            state = np.concatenate((ee_pos, ee_quat, ball_relative_pos, target_relative_pos))
+        else:
+            state = np.concatenate((ee_pos, ee_quat, ball_relative_pos))
         return {
             'object_position': object_position,
             'object_orientation': object_orientation,
-            'state': np.concatenate((ee_pos, ee_quat, ball_relative_pos)),
+            'state': state,
         }
         
     def _get_target_pose(self) -> np.ndarray:

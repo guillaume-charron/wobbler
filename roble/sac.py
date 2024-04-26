@@ -106,7 +106,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
     sim2real_wrap = make_thunk(args.sim2real)
     make_vector_env = functools.partial(balancegym.make_vector_env, sim2real_wrap=sim2real_wrap,
                                         timelimit=args.timelimit, num_vector=args.num_envs)
-    envs = make_vector_env(args.seed, True, f"{PATH}/{args.run_name}/videos")
+    envs = make_vector_env(args, True, f"{PATH}/{args.run_name}/videos")
     #assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
 

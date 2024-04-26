@@ -91,11 +91,11 @@ def train(args, logger, PATH):
     sim2real_wrap = make_thunk(args.sim2real)
     make_vector_env = functools.partial(balancegym.make_vector_env, sim2real_wrap=sim2real_wrap,
                                         timelimit=args.timelimit, num_vector=args.num_envs)
-    envs = make_vector_env(args.seed, True, f"{PATH}/videos")
+    envs = make_vector_env(args, True, f"{PATH}/videos")
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-
+    
     # Load pretrained model
     if args.from_pretrained:
         try:
@@ -120,7 +120,7 @@ def train(args, logger, PATH):
     randomization_updated = False # flag for envs
     start_time = time.time()
     next_obs, _ = envs.reset(seed=args.seed)
-    next_obs = torch.tensor(next_obs).to(device)
+    next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
     
     def init_log_dico():
@@ -153,7 +153,6 @@ def train(args, logger, PATH):
             SINGLE_global_step += 1
             obs[step] = next_obs
             dones[step] = next_done
-
             # if SINGLE_global_step > 1 and ((SINGLE_global_step % (args.eval_frequency // args.num_envs)) == 0):
             #    mean_eval_returns, mean_eval_len = evaluate(agent=agent, make_env=make_vector_env,
             #                                                video_save_path=f"runs/{args.run_name}/videos/global_step_{global_step}",
@@ -178,7 +177,7 @@ def train(args, logger, PATH):
             next_obs, reward, terminations, truncations, infos = envs.step(action.cpu().numpy())
             next_done = np.logical_or(terminations, truncations)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
-            next_obs, next_done = torch.tensor(next_obs).to(device), torch.tensor(next_done).to(device)
+            next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
 
             if "final_info" in infos:
                 for info in infos["final_info"]:
