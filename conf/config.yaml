@@ -14,7 +14,7 @@ meta:
   save_every: 1_000_000
   add_to_runname: "wobble"
   from_pretrained: "models/ppo.cleanrl_model"
-  real_application: True
+  real_application: False
   ros_adress: '192.168.1.101:50051'
 
 # Algorithm specific arguments
