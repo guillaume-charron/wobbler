@@ -1,0 +1,105 @@
+meta:
+  exp_name: BallBalancing
+  run_name: Widow250BallBalancing-v0__BallBalancing__SAC_nogcrl__1__1714093555
+  seed: 1
+  torch_deterministic: true
+  cuda: false
+  track: true
+  save_model: true
+  env_id: Widow250BallBalancing-v0
+  timelimit: 200
+  sac_instead: true
+  randomize_after_steps: 7500000
+  save_every: 1000000
+  add_to_runname: SAC_nogcrl
+  from_pretrained: false
+ppo:
+  num_envs: 8
+  eval_frequency: 200000
+  total_timesteps: 10000000
+  learning_rate: 0.0003
+  num_steps: 2048
+  anneal_lr: true
+  gamma: 0.99
+  gae_lambda: 0.95
+  num_minibatches: 64
+  update_epochs: 10
+  norm_adv: true
+  clip_coef: 0.2
+  clip_vloss: true
+  ent_coef: 0.0
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  target_kl: None
+sac:
+  num_envs: 8
+  total_timesteps: 10000000
+  buffer_size: 1000000.0
+  gamma: 0.99
+  tau: 0.005
+  batch_size: 256
+  learning_starts: 5000.0
+  policy_lr: 0.0003
+  q_lr: 0.001
+  policy_frequency: 2
+  target_network_frequency: 1
+  noise_clip: 0.5
+  alpha: 0.2
+  autotune: true
+batch_size: 0
+minibatch_size: 0
+num_iterations: 0
+sim2real:
+  history_len: 2
+  add_last_action: true
+  gaussian_obs_scale: 0.01
+  gaussian_act_scale: 0.01
+  action_repeat_max: 2
+  max_action_repeat_on_reset: 8
+environment:
+  randomize_every_step: true
+  randomize_ball_drop: true
+  gcrl: false
+  ee_distance_threshold: 0.05
+  ball_size:
+    min: 0.4
+    max: 0.9
+  ball_mass:
+    reset:
+    - 5.0e-05
+    - 0.005
+  ball_rolling_friction:
+    reset:
+    - 0.1
+    - 1
+    step:
+    - 0.09
+    - 0.11
+  ball_lateral_friction:
+    reset:
+    - 0.2
+    - 0.8
+    step:
+    - 0.3
+    - 0.5
+  ball_spinning_friction:
+    reset:
+    - 0.01
+    - 0.5
+    step:
+    - 0.008
+    - 0.012
+  plate_lateral_friction:
+    reset:
+    - 0.1
+    - 0.6
+    step:
+    - 0.17
+    - 0.22
+  center_radius: 0.01
+  distance_center_weight: 1
+  duration_weight: 0.5
+  height_weight: 0.5
+  tilt_weight: 0.2
+  distance_goal_weight: 0.5
+  goal_reached_weight: 2

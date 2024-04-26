@@ -147,5 +147,4 @@ cython_debug/
 
 outputs/
 
-runs/
 conf/local
