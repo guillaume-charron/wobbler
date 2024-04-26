@@ -8,6 +8,7 @@ import pybullet as p
 import hydra
 from hydra.core.global_hydra import GlobalHydra
 from roble.envs.widowx import create_widow_env
+from roboverse.envs.widow250_real import Widow250EnvROSARob
 
 KEY_TO_ACTION_MAPPING = {
     bullet.p.B3G_LEFT_ARROW: np.array([0.1, 0, 0, 0, 0, 0, 0]),
@@ -42,8 +43,10 @@ def load_config():
 def keyboard_control(args):
     cfg = load_config()
     env_config = cfg.environment
-    env = create_widow_env(observation_mode='state', cfg=env_config, gui=True)
-    env.update_randomization(True)
+    # env = create_widow_env(observation_mode='state', cfg=env_config, gui=True)
+    # env = Widow250EnvROSARob(rs_address='192.168.1.101:50051')
+    env = roboverse.make(args.env_name, gui=True)
+    # env.update_randomization(True)
     env.reset()
 
     while True:
@@ -67,6 +70,6 @@ def keyboard_control(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--env-name", type=str,
-                        default='Widow250MultiTaskGrasp-v0')
+                        default='Widow250EnvROSARob-v0')
     args = parser.parse_args()
     keyboard_control(args)
