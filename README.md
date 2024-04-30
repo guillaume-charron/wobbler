@@ -1,4 +1,4 @@
-# Wobbler: Ball balencing robot
+# Wobbler: Ball balancing robot
 A ball balancing environment utilizing [pybullet](https://github.com/bulletphysics/bullet3) for simulation of robotic manipulation tasks. 
 
 ## Setup
